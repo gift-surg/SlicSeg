@@ -5,20 +5,10 @@ function P=PossibilityConnect2(P0,lastSeg)
 [dis,maxdis]=SegShape2Distance(lastSeg);
 isize=size(P0);
 P=P0;
-for i=1:isize(1)
-    for j=1:isize(2)
-        if(dis(i,j)==0)
-            if(P(i,j)>0.5)
-                P(i,j)=0.4*P(i,j);
-            end
-        else
-            P(i,j)=P(i,j)+0.2*dis(i,j)/maxdis;
-            if(P(i,j)>1.0)
-                P(i,j)=1.0;
-            end
-        end
-    end
-end
+outsideIndex=intersect(find(dis==0),find(P>0.5));
+P(outsideIndex)=0.4*P(outsideIndex);
+insideIndex=intersect(find(dis>0) , find(P<0.8));
+P(insideIndex)=P(insideIndex)+0.2*dis(insideIndex)/maxdis;
 
 function [dis,maxdis]=SegShape2Distance(lastSeg)
 Isize=size(lastSeg);

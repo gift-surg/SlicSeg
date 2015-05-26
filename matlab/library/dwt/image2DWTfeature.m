@@ -1,5 +1,6 @@
 function featureSet=image2DWTfeature(I)
-dwt=wgtDWT(I);
+% dwt=wgtDWT(I);
+dwt=wgtDWTGPU(I);
 [H W]=size(dwt);
 k = parallel.gpu.CUDAKernel('wgtDWTMeanStd.ptx','wgtDWTMeanStd.cu','wgtDWTMeanStd');
 k.GridSize=[ceil(H/32),1,1];

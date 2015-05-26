@@ -41,6 +41,7 @@ __device__ void getMeanStdInRegion(const double *array,int H,int W,int x,int roi
 __global__ void wgtDWTMeanStd(const double * dwt,double *outputMean,double *outputStd,const int H,const int W)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
+    if(x>=H) return;
     //int y = blockIdx.y * blockDim.y + threadIdx.y;
     int size=8;
     int halfSize=size/2;
