@@ -7,5 +7,5 @@
 
 % mex  -largeArrayDims maxflowmex.cpp maxflow-v3.0/graph.cpp maxflow-v3.0/maxflow.cpp 
 % mex  wgtmaxflowmex2.cpp maxflow-v3.0/graph.cpp maxflow-v3.0/maxflow.cpp 
-%mex  maxflow_revisemex.cpp maxflow-v3.0/graph.cpp maxflow-v3.0/maxflow.cpp 
+ mex  maxflow_revisemex.cpp maxflow-v3.0/graph.cpp maxflow-v3.0/maxflow.cpp 
  mex  wgtmaxflowmex.cpp maxflow-v3.0/graph.cpp maxflow-v3.0/maxflow.cpp 

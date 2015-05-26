@@ -19,7 +19,7 @@ global OffSegEnable;
 global GeoSEnable;
 global GCEnable;
 global forest_method;
-%addpath('./library/OnineRandomForest');
+addpath('./library/OnineRandomForest');
 forest_method=1;%0--'treebagger provided in MATLAB';%%1--Online Random Forest_wgt
 SegEnable=true;
 if(get(handles.checkbox1,'Value'))
