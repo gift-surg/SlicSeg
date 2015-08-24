@@ -66,9 +66,9 @@ else
     P0=reshape(Prob,Isize);
 end
 onlineP=PossibilityConnect(currentI,P0,currentILabel==127);
-axes(handles.axes_image);
-imshow(onlineP);
+% axes(handles.axes_image);
+% imshow(onlineP);
 
 dis=false;
 maxflow_callback(handles);
-
+showResult(handles);

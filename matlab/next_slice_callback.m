@@ -21,7 +21,7 @@ bgSe2= strel('disk',6);
 bgMask=imdilate(lastSegLabel,bgSe2)-imdilate(lastSegLabel,bgSe1);
 forground=find(currentILabel==127);
 background=find(bgMask>0);
-disp(['new strokes have been generated']);
+% disp(['new strokes have been generated']);
 
 %% load feature set for training
 featureMatrix=ImageToFeature(currentI);
@@ -46,8 +46,8 @@ else
 end
 set(handles.text_currentslice,'String',['current image index ' num2str(currentSegIndex)]);
 currentI=volumeImage(:,:,currentSegIndex);
-axes(handles.axes_image);
-imshow(currentI);
+% axes(handles.axes_image);
+% imshow(currentI);
 
 featureMatrix=ImageToFeature(currentI);
 if(forest_method==0)

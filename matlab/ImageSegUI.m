@@ -22,7 +22,7 @@ function varargout = ImageSegUI(varargin)
 
 % Edit the above text to modify the response to help ImageSegUI
 
-% Last Modified by GUIDE v2.5 19-May-2015 12:21:12
+% Last Modified by GUIDE v2.5 24-Aug-2015 15:29:02
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -224,9 +224,9 @@ if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColo
 end
 
 
-% --- Executes on button press in pushbutton_Next.
-function pushbutton_Next_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_Next (see GCBO)
+% --- Executes on button press in pushbutton_Propagate.
+function pushbutton_Propagate_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_Propagate (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % forward=true
@@ -234,24 +234,29 @@ global currentSegIndex;
 global startSegIndex;
 global sliceNumber;
 currentSegIndex=startSegIndex;
-stopslice=str2num(get(handles.edit_forward,'String'));
-for i=1:stopslice-currentSegIndex
+minSlice=str2num(get(handles.edit_min,'String'));
+maxSlice=str2num(get(handles.edit_max,'String'));
+
+h = waitbar(0,'Please wait...');
+steps = maxSlice-minSlice+1;
+forwardStep=maxSlice-currentSegIndex;
+currentSegIndex=startSegIndex;
+for i=1:maxSlice-currentSegIndex
     next_slice_callback(handles,true);
+    if(mod(i,2)==1)
+        waitbar(i / steps);
+    end
 end
 
-% --- Executes on button press in pushbutton_Previous.
-function pushbutton_Previous_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_Previous (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% forward=false, segmentation will propagate backward
-global currentSegIndex;
-global startSegIndex;
 currentSegIndex=startSegIndex;
-stopslice=str2num(get(handles.edit_backward,'String'));
-for i=1:currentSegIndex-stopslice
+for i=1:currentSegIndex-minSlice
     next_slice_callback(handles,false);
+    if(mod(i,2)==1)
+        waitbar((i+forwardStep) / steps);
+    end
 end
+close(h) ;
+showResult(handles);
 
 % --- Executes on button press in pushbutton_Retrain.
 function pushbutton_Retrain_Callback(hObject, eventdata, handles)
@@ -333,18 +338,18 @@ end
 
 
 
-function edit_forward_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_forward (see GCBO)
+function edit_min_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_min (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit_forward as text
-%        str2double(get(hObject,'String')) returns contents of edit_forward as a double
+% Hints: get(hObject,'String') returns contents of edit_min as text
+%        str2double(get(hObject,'String')) returns contents of edit_min as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit_forward_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_forward (see GCBO)
+function edit_min_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_min (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -356,18 +361,18 @@ end
 
 
 
-function edit_backward_Callback(hObject, eventdata, handles)
-% hObject    handle to edit_backward (see GCBO)
+function edit_max_Callback(hObject, eventdata, handles)
+% hObject    handle to edit_max (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of edit_backward as text
-%        str2double(get(hObject,'String')) returns contents of edit_backward as a double
+% Hints: get(hObject,'String') returns contents of edit_max as text
+%        str2double(get(hObject,'String')) returns contents of edit_max as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function edit_backward_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to edit_backward (see GCBO)
+function edit_max_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to edit_max (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
