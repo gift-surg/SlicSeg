@@ -20,7 +20,7 @@ __device__ void setPixel(double *array,int H,int W,int i,int j,double value)
 
 // lp_hp----0,low pass or 1, high pass
 // dir_h----true, horizonal, false,vertical
-__global__ void wgtDWTConverlution(const double * pDataIn, double * pDataOut, const int H, const int W, 
+__global__ void wgtDWTConvolution(const double * pDataIn, double * pDataOut, const int H, const int W, 
     const int lp_hp, const int scale, const bool dir_h)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
