@@ -10,6 +10,5 @@
 #define __wgtWavelet__wgtCooccurance__
 
 #include <stdio.h>
-#include "pixelOperation.h"
 void cooccurance(const unsigned char *arrayIn,unsigned char *arayOut,int H,int W,int offsetH,int offsetW,int bin);
 #endif /* defined(__wgtWavelet__wgtCooccurance__) */
