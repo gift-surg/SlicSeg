@@ -1,12 +1,12 @@
 //
-//  converlution.cpp
+//  convolution.cpp
 //  wgtWavelet
 //
 //  Created by Guotai Wang on 10/01/2015.
 //  Copyright (c) 2015 Guotai Wang. All rights reserved.
 //
 
-#include "converlution.h"
+#include "convolution.h"
 double getPixel(const double *array,int H,int W,int i,int j)
 {
     if(i<0 || i>=H || j<0 ||j>=W)

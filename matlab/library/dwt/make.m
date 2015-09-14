@@ -1,4 +1,4 @@
 %MAKE   Compiles the wgtDWT library.
 
-mex  wgtDWT.cpp converlution.cpp
+mex  wgtDWT.cpp convolution.cpp
 % mex  wgtGLCM.cpp wgtCooccurance.cpp pixelOperation.cpp

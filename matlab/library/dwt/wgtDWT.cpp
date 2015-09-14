@@ -13,7 +13,7 @@
 //------------------------------------------------------------------------
 
 #include "mex.h"
-#include "converlution.h"
+#include "convolution.h"
 #include <iostream>
 #include <cmath>
 
