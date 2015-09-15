@@ -28,7 +28,7 @@ function SlicSegAddPaths(varargin)
         path_folders{end + 1} = fullfile('matlab', 'library', 'dwt');
         path_folders{end + 1} = fullfile('matlab', 'library', 'FeatureExtract');
         path_folders{end + 1} = fullfile('matlab', 'library', 'maxflow');
-        path_folders{end + 1} = fullfile('matlab', 'library', 'OnineRandomForest');
+        path_folders{end + 1} = fullfile('matlab', 'library', 'OnlineRandomForest');
 
         AddToPath(path_root, path_folders)
         
