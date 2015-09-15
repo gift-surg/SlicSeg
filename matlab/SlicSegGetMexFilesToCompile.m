@@ -39,6 +39,9 @@ function mex_files_to_compile_map = SlicSegGetMexFilesToCompile(~)
     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'imageHoG', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'intensityFeature', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
     
+    % Cuda files - Online random forest
+    files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'ForestPredict', 'cu', fullfile(mex_dir, 'library', 'OnlineRandomForest'), '-ptx', []);
+    
     % Transfer to a map
     mex_files_to_compile_map = containers.Map;
     for mex_file = files_to_compile
