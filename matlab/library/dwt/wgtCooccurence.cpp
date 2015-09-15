@@ -1,12 +1,12 @@
 //
-//  wgtCooccurance.cpp
+//  wgtCooccurence.cpp
 //  wgtWavelet
 //
 //  Created by Guotai Wang on 13/01/2015.
 //  Copyright (c) 2015 Guotai Wang. All rights reserved.
 //
 
-#include "wgtCooccurance.h"
+#include "wgtCooccurence.h"
 #include "pixelOperation.h"
 
 void cooccurance(const unsigned char *arrayIn,unsigned char *arayOut,int H,int W,int offsetH,int offsetW,int bin)

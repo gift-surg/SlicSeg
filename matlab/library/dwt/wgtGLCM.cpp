@@ -13,7 +13,7 @@
 //------------------------------------------------------------------------
 
 #include "mex.h"
-#include "wgtCooccurance.h"
+#include "wgtCooccurence.h"
 #include "pixelOperation.h"
 #include <iostream>
 #include <cmath>
