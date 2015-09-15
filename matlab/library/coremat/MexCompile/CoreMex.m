@@ -27,11 +27,12 @@ classdef CoreMex < CoreBaseClass
                 reporting = CoreReportingDefault;
             end
             
-            mexCacheFilename = fullfile(CoreDiskUtilities.GetUserDirectory, 'depmat', 'MexCache.xml');
+            coreMexDirectory = fullfile(CoreDiskUtilities.GetUserDirectory, 'coremex');
+            mexCacheFilename = fullfile(coreMexDirectory, 'MexCache.xml');
             
             obj.Reporting = reporting;
             obj.MexSingleton = CoreMexSingleton.GetMexSingleton(mexCacheFilename, obj.Reporting);
-            obj.CompileBinDirectory = fullfile(CoreDiskUtilities.GetUserDirectory, 'depmat', 'mex_bin');
+            obj.CompileBinDirectory = fullfile(coreMexDirectory, 'mex_bin');
             CoreDiskUtilities.CreateDirectoryIfNecessary(obj.CompileBinDirectory);
             addpath(obj.CompileBinDirectory);
             obj.FileList = mexFileList;

@@ -180,7 +180,12 @@ function CheckMexFiles(mex_files_to_compile, cached_mex_file_info, output_direct
 
             % Check whether compiled file exists. We only need to do this if the
             % cache was found, because otherwise we will be recompiling anyway
-            dst_fullfile = fullfile(output_directory, [mex_file.Name, mex_extension]);
+            if isa(mex_file, 'CoreCudaInfo')
+                compiled_file_extension = '.ptx';
+            else
+                compiled_file_extension = mex_extension;
+            end
+            dst_fullfile = fullfile(output_directory, [mex_file.Name, compiled_file_extension]);
             if ~exist(dst_fullfile, 'file')
                 mex_file.NeedsRecompile = true;
                 
