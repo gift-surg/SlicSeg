@@ -14,6 +14,7 @@
 
 #include "mex.h"
 #include "wgtCooccurance.h"
+#include "pixelOperation.h"
 #include <iostream>
 #include <cmath>
 

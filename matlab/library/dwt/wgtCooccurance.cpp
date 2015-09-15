@@ -7,6 +7,8 @@
 //
 
 #include "wgtCooccurance.h"
+#include "pixelOperation.h"
+
 void cooccurance(const unsigned char *arrayIn,unsigned char *arayOut,int H,int W,int offsetH,int offsetW,int bin)
 {
     float binLength=256/bin;
