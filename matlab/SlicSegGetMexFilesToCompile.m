@@ -29,10 +29,15 @@ function mex_files_to_compile_map = SlicSegGetMexFilesToCompile(~)
         {fullfile(mex_dir, 'library', 'OnineRandomForest', 'ORForest.cpp'), fullfile(mex_dir, 'library', 'OnineRandomForest', 'ODTree.cpp')} ...
     );
 
-    % Cuda files
+    % Cuda files - dwt
     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'wgtDWTConvolution', 'cu', fullfile(mex_dir, 'library', 'dwt'), '-ptx', []);
     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'wgtDWTMeanStd', 'cu', fullfile(mex_dir, 'library', 'dwt'), '-ptx', []);
     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'wgtDWTFeature', 'cu', fullfile(mex_dir, 'library', 'dwt'), '-ptx', []);
+
+    % Cuda files - FeatureExtract
+    files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'imageGradient', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
+    files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'imageHoG', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
+    files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'intensityFeature', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
     
     % Transfer to a map
     mex_files_to_compile_map = containers.Map;
