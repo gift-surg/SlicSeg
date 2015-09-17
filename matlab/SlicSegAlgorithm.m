@@ -26,7 +26,7 @@ classdef SlicSegAlgorithm < handle
     methods (Access=public)
         function d=SlicSegAlgorithm()
             % construction function
-            addpath('./library/OnineRandomForest');
+%             addpath('./library/OnineRandomForest');
             d.startIndex=0;
             d.sliceRange=[0,0];
             d.currentSegIndex=0;
@@ -192,8 +192,8 @@ classdef SlicSegAlgorithm < handle
     methods (Access=protected)
         function featureMatrix=GetSliceFeature(d,n)
             % get the feature matrix for n-th slice
-            addpath('./library/dwt');
-            addpath('./library/FeatureExtract');
+%             addpath('./library/dwt');
+%             addpath('./library/FeatureExtract');
             I=d.volumeImage(:,:,n);
             dwtFeature=image2DWTfeature(I);
             hogFeature=image2HOGFeature(I);
@@ -321,7 +321,7 @@ classdef SlicSegAlgorithm < handle
         
         function d=GetSingleSliceSegmentation(d)
             % use max flow to get the segmentatio in one slice
-            addpath('./library/maxflow'); 
+%             addpath('./library/maxflow'); 
             currentI=d.volumeImage(:,:,d.currentSegIndex);
             currentP=d.probabilityImage(:,:,d.currentSegIndex);
             currentSeed=d.currentSeedLabel;
