@@ -1,0 +1,9 @@
+clear;
+slicSeg=SlicSegAlgorithm;
+slicSeg.Set('lambda',5.0,'sigma',3.5,'innerDis',6,'outerDis',6);
+slicSeg.OpenImage('a23_05/img');
+slicSeg.OpenScribbleImage('a23_05/22_seedsrgb.png');
+slicSeg.Set('startIndex',22);
+slicSeg.Set('sliceRange',[5,39]);
+slicSeg.RunSegmention();
+slicSeg.SaveSegmentationResult('a23_05/seg');
