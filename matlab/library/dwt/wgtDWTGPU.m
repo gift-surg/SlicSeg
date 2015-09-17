@@ -1,6 +1,6 @@
 function dwt=wgtDWTGPU(I)
 [H,W]=size(I);
-k = parallel.gpu.CUDAKernel('wgtDWTConverlution.ptx','wgtDWTConverlution.cu','wgtDWTConverlution');
+k = parallel.gpu.CUDAKernel('wgtDWTConvolution.ptx','wgtDWTConvolution.cu','wgtDWTConvolution');
 k.GridSize=[ceil(H/32),ceil(W/32),1];
 k.ThreadBlockSize = [32,32,1];
 

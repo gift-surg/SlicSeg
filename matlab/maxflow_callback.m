@@ -11,7 +11,6 @@ global onlineP;
 global lambda;
 global sigma;
 global runtime;
-addpath('./library/maxflow'); 
 
 [flow, currentSegLabel]=wgtmaxflowmex(currentI,currentILabel,onlineP,lambda,sigma);
 currentSegLabel=1-currentSegLabel;
