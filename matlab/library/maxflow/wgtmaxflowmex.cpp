@@ -123,7 +123,8 @@ void mexFunction(int			nlhs, 		/* number of expected outputs */
 	plhs[0] = mxCreateDoubleMatrix(1,1,mxREAL);
 	double* flow = mxGetPr(plhs[0]);
 	*flow = g->maxflow();
-    printf("max flow: %f\n",*flow);
+    
+    // printf("max flow: %f\n",*flow);
 	// figure out segmentation
 	plhs[1] = mxCreateNumericMatrix(m, n, mxUINT8_CLASS, mxREAL);
 	unsigned char * labels = (unsigned char*)mxGetData(plhs[1]);

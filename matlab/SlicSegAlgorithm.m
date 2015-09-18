@@ -23,6 +23,10 @@ classdef SlicSegAlgorithm < handle
         outerDis;         % radius of dilation when generating new training data
     end
     
+    events
+        SegmentationProgress
+    end
+    
     methods (Access=public)
         function d=SlicSegAlgorithm()
             % construction function
@@ -55,9 +59,7 @@ classdef SlicSegAlgorithm < handle
                         d.volumeImage=val;
                         Isize=size(val);
                         d.imageSize=Isize;
-                        d.currentSeedLabel=uint8(zeros(Isize(1),Isize(2)));
-                        d.segImage=uint8(zeros(Isize));
-                        d.probabilityImage=zeros(Isize); 
+                        d.ResetSegmentationResult();
                     case 'seedImage'
                         d.seedImage=val;
                     case 'lambda'
@@ -86,6 +88,8 @@ classdef SlicSegAlgorithm < handle
                     val=d.imageSize;
                 case 'volumeImage'
                     val=d.volumeImage;
+                case 'seedImage'
+                    val=d.seedImage;
                 case 'segImage'
                     val=d.segImage;
                 case 'probabilityImage'
@@ -134,6 +138,13 @@ classdef SlicSegAlgorithm < handle
             
         end
         
+        function d=ResetSegmentationResult(d)
+            d.currentSeedLabel=uint8(zeros(d.imageSize(1),d.imageSize(2)));
+            d.seedImage=uint8(zeros(d.imageSize(1),d.imageSize(2)));
+            d.segImage=uint8(zeros(d.imageSize));
+            d.probabilityImage=zeros(d.imageSize);
+        end
+        
         function d=SaveSegmentationResult(d,segSaveFolder)
             for index=1:d.imageSize(3)
                 segFileName=fullfile(segSaveFolder,[num2str(index) '_seg.png']);
@@ -143,7 +154,7 @@ classdef SlicSegAlgorithm < handle
         end
 
         function d=StartSliceSegmentation(d)
-            if(d.startIndex==0 || d.sliceRange(1)==0 || d.sliceRange(2)==0)
+            if(d.startIndex==0)
                 error('slice index should not be 0');
             end
             % segmentation in the start slice
@@ -158,15 +169,24 @@ classdef SlicSegAlgorithm < handle
         
         function d=SegmentationPropagate(d)
             % propagate to previous slices
-            for i=d.startIndex:-1:d.sliceRange(1)+1
-                if(i<d.startIndex)
+            if(d.sliceRange(1)==0 || d.sliceRange(2)==0)
+                error('index range should not be 0');
+            end
+            for i=1:d.startIndex-d.sliceRange(1)
+                if(i>1)
                     d.Train();
                 end
                 d.currentSegIndex=d.currentSegIndex-1;
                 d.Predict();
                 d.GetSingleSliceSegmentation();
                 d.UpdateSeedLabel(d.innerDis,d.outerDis);
+                
+                if(mod(i,3)==0)
+                    progress=double(i)/(d.sliceRange(2)-d.sliceRange(1)+1);
+                    notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(progress));
+                end
             end
+            
             
             % propagate to following slices
             d.currentSegIndex=d.startIndex;
@@ -179,13 +199,17 @@ classdef SlicSegAlgorithm < handle
                 d.Predict();
                 d.GetSingleSliceSegmentation();
                 d.UpdateSeedLabel(d.innerDis,d.outerDis);
+                
+                if(mod(i-d.sliceRange(1),3)==0)
+                    progress=double(i-d.sliceRange(1))/(d.sliceRange(2)-d.sliceRange(1)+1);
+                    notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(progress));
+                end
             end
         end
         
         function d=RunSegmention(d)
             d.StartSliceSegmentation();
             d.SegmentationPropagate();
-            disp('segmentation finished');
         end
     end
     
@@ -332,7 +356,6 @@ classdef SlicSegAlgorithm < handle
             currentSegLabel=imclose(currentSegLabel,se);
             currentSegLabel=imopen(currentSegLabel,se);
             d.segImage(:,:,d.currentSegIndex)=currentSegLabel(:,:);
-            disp(['segmentation achieved for slice ' num2str(d.currentSegIndex)]);
         end
         
         function d=UpdateSeedLabel(d,fgr,bgr)

@@ -1,17 +1,17 @@
 function showResult(handles)
-global volumeImage;
-global volumeSeg;
-global sliceStatus;
+global slicSeg;
 global currentViewImageIndex;
-global startSegIndex;
-global ILabel;
-I=volumeImage(:,:,currentViewImageIndex);
+volumeImg=slicSeg.Get('volumeImage');
+I=volumeImg(:,:,currentViewImageIndex);
 showI=repmat(I,1,1,3);
-if(sliceStatus(currentViewImageIndex)==1)
-    showI=addContourToImage(showI,volumeSeg(:,:,currentViewImageIndex));
+
+segVolumeImg=slicSeg.Get('segImage');
+segI=segVolumeImg(:,:,currentViewImageIndex);
+if(~isempty(find(segI,1)))
+    showI=addContourToImage(showI,segI);
 end
-if(currentViewImageIndex==startSegIndex)
-    showI=addSeedsToImage(showI,ILabel);
+if(currentViewImageIndex==slicSeg.Get('startIndex'))
+    showI=addSeedsToImage(showI,slicSeg.Get('seedImage'));
 end
 imshow(showI);
 
