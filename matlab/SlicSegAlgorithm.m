@@ -116,7 +116,7 @@ classdef SlicSegAlgorithm < handle
                 volume(:,:,i)=tempI(:,:);
             end
             d.Set('volumeImage',volume);
-            disp('volume image has been loaded successfully');
+
         end
         
         function d=OpenScribbleImage(d,labelFileName)
@@ -150,7 +150,7 @@ classdef SlicSegAlgorithm < handle
                 segFileName=fullfile(segSaveFolder,[num2str(index) '_seg.png']);
                 imwrite(d.segImage(:,:,index)*255,segFileName);
             end
-            disp('segmentation result has been saved successfully');
+
         end
 
         function d=StartSliceSegmentation(d)
