@@ -1,18 +1,19 @@
-function showResult(handles)
+function showResult()
 global slicSeg;
 global currentViewImageIndex;
-volumeImg=slicSeg.Get('volumeImage');
-I=volumeImg(:,:,currentViewImageIndex);
+global glbHandles;
+
+I=slicSeg.Get2DSlice('volumeImage',currentViewImageIndex);
 showI=repmat(I,1,1,3);
 
-segVolumeImg=slicSeg.Get('segImage');
-segI=segVolumeImg(:,:,currentViewImageIndex);
+segI=slicSeg.Get2DSlice('segImage',currentViewImageIndex);
 if(~isempty(find(segI,1)))
     showI=addContourToImage(showI,segI);
 end
 if(currentViewImageIndex==slicSeg.Get('startIndex'))
     showI=addSeedsToImage(showI,slicSeg.Get('seedImage'));
 end
+axes(glbHandles.axes_image);
 imshow(showI);
 
 function ISeg=addContourToImage(IRGB,Label)

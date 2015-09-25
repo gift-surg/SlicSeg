@@ -88,6 +88,8 @@ function pushbutton_loadImage_Callback(hObject, eventdata, handles)
 global currentViewImageIndex;
 global ILabel;
 global slicSeg;
+global glbHandles;
+glbHandles=handles;
 reset(handles.axes_image);
 cla(handles.axes_image);
 set(gcf,'WindowButtonDownFcn',{@mouse_down});
@@ -104,7 +106,7 @@ currentViewImageIndex=str2num(startFileName(1:filenameLen-4));
 
 imgSize=slicSeg.Get('imageSize');
 ILabel=uint8(zeros([imgSize(1), imgSize(2)]));
-showResult(handles);
+showResult();
 
 set(handles.text_currentslice,'String',['current slice number: ' num2str(currentViewImageIndex)]);
 set(handles.text_totalslice,'String',['total slice number: ' num2str(sliceNumber)]);
@@ -141,7 +143,7 @@ global ILabel;
 slicSeg.Set('startIndex',currentViewImageIndex);
 slicSeg.Set('seedImage',ILabel);
 slicSeg.StartSliceSegmentation();
-showResult(handles);
+showResult();
 
 % --- Executes on button press in pushbutton_Propagate.
 function pushbutton_Propagate_Callback(hObject, eventdata, handles)
@@ -155,14 +157,19 @@ minSlice=str2num(get(handles.edit_min,'String'));
 maxSlice=str2num(get(handles.edit_max,'String'));
 slicSeg.Set('sliceRange',[minSlice,maxSlice]);
 
-addlistener(slicSeg,'SegmentationProgress',@UpdateSegmentationProgressBar);
-processBar = waitbar(0,'Please wait...');
+addlistener(slicSeg,'SegmentationProgress',@UpdateSegmentationProgress);
+% processBar = waitbar(0,'Please wait...');
 slicSeg.SegmentationPropagate();
-close(processBar) ;
-showResult(handles);
+% close(processBar) ;
 
-function UpdateSegmentationProgressBar(eventSrc,eventData)
-waitbar(eventData.OrgValue);
+
+function UpdateSegmentationProgress(eventSrc,eventData)
+global currentViewImageIndex;
+global glbHandles;
+currentViewImageIndex=eventData.OrgValue;
+set(glbHandles.slider_imageIndex,'Value',currentViewImageIndex);
+set(glbHandles.text_currentslice,'String',['current slice number: ' num2str(currentViewImageIndex)]);
+showResult();
 
 
 
@@ -175,7 +182,7 @@ global slicSeg;
 global ILabel;
 ILabel=uint8(zeros(size(ILabel)));
 slicSeg.ResetSegmentationResult();
-showResult(handles);
+showResult();
 
 % --- Executes on slider movement.
 function slider_imageIndex_Callback(hObject, eventdata, handles)
@@ -188,7 +195,7 @@ function slider_imageIndex_Callback(hObject, eventdata, handles)
 global currentViewImageIndex;
 currentViewImageIndex=round(get(handles.slider_imageIndex,'Value'));
 set(handles.text_currentslice,'String',['current slice number: ' num2str(currentViewImageIndex)]);
-showResult(handles);
+showResult();
 
 % --- Executes during object creation, after setting all properties.
 function slider_imageIndex_CreateFcn(hObject, eventdata, handles)

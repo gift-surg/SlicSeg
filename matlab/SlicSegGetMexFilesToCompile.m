@@ -41,6 +41,8 @@ function mex_files_to_compile_map = SlicSegGetMexFilesToCompile(~)
     % Cuda files - FeatureExtract
     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'imageGradient', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'imageHoG', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
+%     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'LBPNumber', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
+%     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'LBPFeature', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'intensityFeature', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
     
     % Cuda files - Online random forest

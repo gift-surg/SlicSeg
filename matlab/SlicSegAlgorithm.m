@@ -30,7 +30,7 @@ classdef SlicSegAlgorithm < handle
     methods (Access=public)
         function d=SlicSegAlgorithm()
             % construction function
-%             addpath('./library/OnineRandomForest');
+            addpath('./library/OnlineRandomForest');
             d.startIndex=0;
             d.sliceRange=[0,0];
             d.currentSegIndex=0;
@@ -99,6 +99,19 @@ classdef SlicSegAlgorithm < handle
             end
         end
         
+        function val=Get2DSlice(d,dataName, sliceIndex)
+            switch dataName
+                case 'volumeImage'
+                    val=d.volumeImage(:,:,sliceIndex);
+                case 'probabilityImage'
+                    val=d.probabilityImage(:,:,sliceIndex);
+                case 'segImage'
+                    val=d.segImage(:,:,sliceIndex);
+                otherwise
+                    error([prop_name,'is not a valid image']);
+            end   
+        end
+        
         function d=OpenImage(d,imgFolderName)
             % read volume image from a folder, which contains a chain of
             % *.png images indexed from 1 to the number of slices.
@@ -158,8 +171,9 @@ classdef SlicSegAlgorithm < handle
                 error('slice index should not be 0');
             end
             % segmentation in the start slice
-            d.currentSeedLabel  = d.seedImage;
-            d.currentTrainLabel = d.seedImage;
+            SeedLabel=d.GetSeedLabelImage();
+            d.currentSeedLabel  = SeedLabel;
+            d.currentTrainLabel = SeedLabel;
             d.currentSegIndex   = d.startIndex;
             d.Train();
             d.Predict();
@@ -172,6 +186,7 @@ classdef SlicSegAlgorithm < handle
             if(d.sliceRange(1)==0 || d.sliceRange(2)==0)
                 error('index range should not be 0');
             end
+            d.currentSegIndex=d.startIndex;
             for i=1:d.startIndex-d.sliceRange(1)
                 if(i>1)
                     d.Train();
@@ -180,17 +195,14 @@ classdef SlicSegAlgorithm < handle
                 d.Predict();
                 d.GetSingleSliceSegmentation();
                 d.UpdateSeedLabel(d.innerDis,d.outerDis);
-                
-                if(mod(i,3)==0)
-                    progress=double(i)/(d.sliceRange(2)-d.sliceRange(1)+1);
-                    notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(progress));
-                end
+                notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(d.currentSegIndex));
             end
             
             
             % propagate to following slices
             d.currentSegIndex=d.startIndex;
             d.UpdateSeedLabel(d.innerDis,d.outerDis);
+            notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(d.currentSegIndex));
             for i=d.startIndex:d.sliceRange(2)-1
                 if(i>d.startIndex)
                     d.Train();
@@ -199,11 +211,7 @@ classdef SlicSegAlgorithm < handle
                 d.Predict();
                 d.GetSingleSliceSegmentation();
                 d.UpdateSeedLabel(d.innerDis,d.outerDis);
-                
-                if(mod(i-d.sliceRange(1),3)==0)
-                    progress=double(i-d.sliceRange(1))/(d.sliceRange(2)-d.sliceRange(1)+1);
-                    notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(progress));
-                end
+                notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(d.currentSegIndex));
             end
         end
         
@@ -216,11 +224,12 @@ classdef SlicSegAlgorithm < handle
     methods (Access=protected)
         function featureMatrix=GetSliceFeature(d,n)
             % get the feature matrix for n-th slice
-%             addpath('./library/dwt');
-%             addpath('./library/FeatureExtract');
+            addpath('./library/dwt');
+            addpath('./library/FeatureExtract');
             I=d.volumeImage(:,:,n);
             dwtFeature=image2DWTfeature(I);
             hogFeature=image2HOGFeature(I);
+%             lbpFeature=image2LBPFeature(I);
             intensityFeature=image2IntensityFeature(I);
             % glmcfeatures=image2GLCMfeature(I);
             % featureMatrix=[intensityFeature dwtFeature];% glmcfeatures];
@@ -257,6 +266,19 @@ classdef SlicSegAlgorithm < handle
             d.probabilityImage(:,:,d.currentSegIndex)=P0;
             d.ProbilityProcess();
         end   
+        
+        function Label=GetSeedLabelImage(d)
+            Label=d.seedImage;
+            [H,W]=size(Label);
+            for i=5:5:H-5
+                Label(i,5)=255;
+                Label(i,W-5)=255;
+            end
+            for j=5:5:W-5
+                Label(5,j)=255;
+                Label(H-5,j)=255;
+            end
+        end
         
         function d=ProbabilityProcessUsingConnectivity(d)
             P0=d.probabilityImage(:,:,d.currentSegIndex);
@@ -345,7 +367,7 @@ classdef SlicSegAlgorithm < handle
         
         function d=GetSingleSliceSegmentation(d)
             % use max flow to get the segmentatio in one slice
-%             addpath('./library/maxflow'); 
+            addpath('./library/maxflow'); 
             currentI=d.volumeImage(:,:,d.currentSegIndex);
             currentP=d.probabilityImage(:,:,d.currentSegIndex);
             currentSeed=d.currentSeedLabel;
@@ -383,6 +405,7 @@ classdef SlicSegAlgorithm < handle
             d.currentSeedLabel(fgMask>0)=127;
             d.currentSeedLabel(bgMask>0)=255;
         end
+       
     end
 end
 
