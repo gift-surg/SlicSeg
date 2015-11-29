@@ -104,7 +104,7 @@ sliceNumber=length(dirinfo);
 filenameLen=length(startFileName);
 currentViewImageIndex=str2num(startFileName(1:filenameLen-4));
 
-imgSize=slicSeg.Get('imageSize');
+imgSize=slicSeg.imageSize;
 ILabel=uint8(zeros([imgSize(1), imgSize(2)]));
 showResult();
 
@@ -140,8 +140,8 @@ function pushbutton_segment_Callback(hObject, eventdata, handles)
 global slicSeg;
 global currentViewImageIndex;
 global ILabel;
-slicSeg.Set('startIndex',currentViewImageIndex);
-slicSeg.Set('seedImage',ILabel);
+slicSeg.startIndex = currentViewImageIndex;
+slicSeg.seedImage = ILabel;
 slicSeg.StartSliceSegmentation();
 showResult();
 
@@ -155,7 +155,7 @@ global slicSeg;
 % global processBar;
 minSlice=str2num(get(handles.edit_min,'String'));
 maxSlice=str2num(get(handles.edit_max,'String'));
-slicSeg.Set('sliceRange',[minSlice,maxSlice]);
+slicSeg.sliceRange = [minSlice,maxSlice];
 
 addlistener(slicSeg,'SegmentationProgress',@UpdateSegmentationProgress);
 % processBar = waitbar(0,'Please wait...');
