@@ -6,14 +6,14 @@ classdef SlicSegAlgorithm < handle
         startIndex       % start slice index
         sliceRange       % 2x1 matrix to store the minimum and maximum slice index
         
-        seedImage         % 2D seed image containging user-provided scribbles in the start slice
+        seedImage         % 2D seed image containing user-provided scribbles in the start slice
         volumeImage       % 3D input volume image
         segImage          % 3D image for segmentation result
         probabilityImage  % 3D image of probability of being foreground
         
         randomForest      % Random Forest to learn and predict
-        lambda            % parameter for max-flow, control the weight of unary term and binary term
-        sigma             % parameter for max-flow, control the sensitivity of intensity difference
+        lambda            % parameter for max-flow; controls the weight of unary term and binary term
+        sigma             % parameter for max-flow; controls the sensitivity of intensity difference
         innerDis          % radius of erosion when generating new training data
         outerDis          % radius of dilation when generating new training data
     end
