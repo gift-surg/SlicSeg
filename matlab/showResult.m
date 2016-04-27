@@ -10,8 +10,8 @@ segI=slicSeg.Get2DSlice('segImage',currentViewImageIndex);
 if(~isempty(find(segI,1)))
     showI=addContourToImage(showI,segI);
 end
-if(currentViewImageIndex==slicSeg.Get('startIndex'))
-    showI=addSeedsToImage(showI,slicSeg.Get('seedImage'));
+if(currentViewImageIndex==slicSeg.startIndex)
+    showI=addSeedsToImage(showI,slicSeg.seedImage);
 end
 axes(glbHandles.axes_image);
 imshow(showI);

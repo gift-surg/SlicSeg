@@ -1,40 +1,39 @@
-
 classdef SlicSegAlgorithm < handle
     % Interactive segmentation algorithm of Slic-Seg
     % The user selects one start slice and draws some scribbles in that
     % slice to start segmentation.
     properties
-        startIndex;      % start slice index
-        sliceRange;      % 2x1 matrix to store the minimum and maximum slice index
-        currentSegIndex; % current slice index during propagation
-        imageSize;       % 3x1 matrix, size of image (width, height, slices)
+        startIndex       % start slice index
+        sliceRange       % 2x1 matrix to store the minimum and maximum slice index
+        currentSegIndex  % current slice index during propagation
         
-        seedImage;        % 2D seed image containging user-provided scribbles in the start slice
-        volumeImage;      % 3D input volume image
-        segImage;         % 3D image for segmentation result
-        probabilityImage; % 3D image of probability of being foreground
-        currentSeedLabel; % 2D image, seeds (hard constraint) for max flow
-        currentTrainLabel;% 2D image, labeled scribbles (training data) for random forest
+        seedImage         % 2D seed image containging user-provided scribbles in the start slice
+        volumeImage       % 3D input volume image
+        segImage          % 3D image for segmentation result
+        probabilityImage  % 3D image of probability of being foreground
+        currentSeedLabel  % 2D image, seeds (hard constraint) for max flow
+        currentTrainLabel % 2D image, labeled scribbles (training data) for random forest
         
-        randomForest;     % Random Forest to learn and predict
-        lambda;           % parameter for max-flow, control the weight of unary term and binary term
-        sigma;            % parameter for max-flow, control the sensitivity of intensity difference
-        innerDis;         % radius of erosion when generating new training data
-        outerDis;         % radius of dilation when generating new training data
+        randomForest      % Random Forest to learn and predict
+        lambda            % parameter for max-flow, control the weight of unary term and binary term
+        sigma             % parameter for max-flow, control the sensitivity of intensity difference
+        innerDis          % radius of erosion when generating new training data
+        outerDis          % radius of dilation when generating new training data
+    end
+    
+    properties (Dependent)
+        imageSize        % 3x1 matrix, size of image (width, height, slices)
     end
     
     events
         SegmentationProgress
     end
     
-    methods (Access=public)
-        function d=SlicSegAlgorithm()
-            % construction function
-            addpath('./library/OnlineRandomForest');
+    methods
+        function d=SlicSegAlgorithm
             d.startIndex=0;
             d.sliceRange=[0,0];
             d.currentSegIndex=0;
-            d.imageSize=[0,0,0];
             d.randomForest=Forest_interface();
             d.randomForest.Init(20,8,20);
             
@@ -44,58 +43,24 @@ classdef SlicSegAlgorithm < handle
             d.outerDis=6;
         end
         
-        function d=Set(d,varargin)
-            argin=varargin;
-            while(length(argin)>=2)
-                prop=argin{1};
-                val=argin{2};
-                argin=argin(3:end);
-                switch prop
-                    case 'startIndex'
-                        d.startIndex=val;
-                    case 'sliceRange'
-                        d.sliceRange=val;
-                    case 'volumeImage'
-                        d.volumeImage=val;
-                        Isize=size(val);
-                        d.imageSize=Isize;
-                        d.ResetSegmentationResult();
-                    case 'seedImage'
-                        d.seedImage=val;
-                    case 'lambda'
-                        d.lambda=val;
-                    case 'sigma'
-                        d.sigma=val;
-                    case 'innerDis'
-                        d.innerDis=val;
-                    case 'outerDis'
-                        d.outerDis=val;
-                    otherwise
-                        error([prop_name,'is not a valid property']);
-                end
+        function imageSize = get.imageSize(d)
+            if isempty(d.volumeImage)
+                imageSize=[0,0,0];
+            else
+                imageSize=size(d.volumeImage);
             end
         end
         
-        function val=Get(d,prop_name)
-            switch prop_name
-                case 'startIndex'
-                    val=d.startIndex;
-                case 'currentSegIndex'
-                    val=d.currentSegIndex;
-                case 'randomForest'
-                    val=d.randomForest;
-                case 'imageSize'
-                    val=d.imageSize;
-                case 'volumeImage'
-                    val=d.volumeImage;
-                case 'seedImage'
-                    val=d.seedImage;
-                case 'segImage'
-                    val=d.segImage;
-                case 'probabilityImage'
-                    val=d.probabilityImage;
-                otherwise
-                    error([prop_name,'is not a valid property']);
+        function set.volumeImage(d,volumeImage)
+            d.volumeImage=volumeImage;
+            d.ResetSegmentationResult();
+        end
+        
+        function SetMultipleProperties(d,varargin)
+            argin=varargin;
+            while(length(argin)>=2)
+                d.(argin{1})=argin{2};
+                argin=argin(3:end);
             end
         end
         
@@ -109,15 +74,15 @@ classdef SlicSegAlgorithm < handle
                     val=d.segImage(:,:,sliceIndex);
                 otherwise
                     error([prop_name,'is not a valid image']);
-            end   
+            end
         end
         
-        function d=OpenImage(d,imgFolderName)
+        function OpenImage(d,imgFolderName)
             % read volume image from a folder, which contains a chain of
             % *.png images indexed from 1 to the number of slices.
             dirinfo=dir(fullfile(imgFolderName,'*.png'));
             sliceNumber=length(dirinfo);
-
+            
             longfilename=fullfile(imgFolderName,'1.png');
             I=imread(longfilename);
             size2d=size(I);
@@ -128,11 +93,11 @@ classdef SlicSegAlgorithm < handle
                 tempI=imread(tempfilename);
                 volume(:,:,i)=tempI(:,:);
             end
-            d.Set('volumeImage',volume);
-
+            d.volumeImage = volume;
+            
         end
         
-        function d=OpenScribbleImage(d,labelFileName)
+        function OpenScribbleImage(d,labelFileName)
             % read scribbles in the start slice (*.png rgb file)
             rgbLabel=imread(labelFileName);
             ISize=size(rgbLabel);
@@ -146,27 +111,27 @@ classdef SlicSegAlgorithm < handle
                     end
                 end
             end
-            d.Set('seedImage',ILabel);
+            d.seedImage = ILabel;
             disp('seed image has been loaded successfully');
             
         end
         
-        function d=ResetSegmentationResult(d)
+        function ResetSegmentationResult(d)
             d.currentSeedLabel=uint8(zeros(d.imageSize(1),d.imageSize(2)));
             d.seedImage=uint8(zeros(d.imageSize(1),d.imageSize(2)));
             d.segImage=uint8(zeros(d.imageSize));
             d.probabilityImage=zeros(d.imageSize);
         end
         
-        function d=SaveSegmentationResult(d,segSaveFolder)
+        function SaveSegmentationResult(d,segSaveFolder)
             for index=1:d.imageSize(3)
                 segFileName=fullfile(segSaveFolder,[num2str(index) '_seg.png']);
                 imwrite(d.segImage(:,:,index)*255,segFileName);
             end
-
+            
         end
-
-        function d=StartSliceSegmentation(d)
+        
+        function StartSliceSegmentation(d)
             if(d.startIndex==0)
                 error('slice index should not be 0');
             end
@@ -181,7 +146,7 @@ classdef SlicSegAlgorithm < handle
             d.UpdateSeedLabel(d.innerDis,d.outerDis);
         end
         
-        function d=SegmentationPropagate(d)
+        function SegmentationPropagate(d)
             % propagate to previous slices
             if(d.sliceRange(1)==0 || d.sliceRange(2)==0)
                 error('index range should not be 0');
@@ -215,28 +180,26 @@ classdef SlicSegAlgorithm < handle
             end
         end
         
-        function d=RunSegmention(d)
+        function RunSegmention(d)
             d.StartSliceSegmentation();
             d.SegmentationPropagate();
         end
     end
     
-    methods (Access=protected)
+    methods (Access=private)
         function featureMatrix=GetSliceFeature(d,n)
             % get the feature matrix for n-th slice
-            addpath('./library/dwt');
-            addpath('./library/FeatureExtract');
             I=d.volumeImage(:,:,n);
             dwtFeature=image2DWTfeature(I);
             hogFeature=image2HOGFeature(I);
-%             lbpFeature=image2LBPFeature(I);
+            %             lbpFeature=image2LBPFeature(I);
             intensityFeature=image2IntensityFeature(I);
             % glmcfeatures=image2GLCMfeature(I);
             % featureMatrix=[intensityFeature dwtFeature];% glmcfeatures];
             featureMatrix=[intensityFeature hogFeature dwtFeature];
         end
-                                
-        function d=Train(d)
+        
+        function Train(d)
             % train the random forest using scribbles in on slice
             if(isempty(d.currentSeedLabel) || isempty(find(d.currentSeedLabel>0)))
                 error('the training set is empty');
@@ -258,14 +221,14 @@ classdef SlicSegAlgorithm < handle
             d.randomForest.Train(TrainingDataWithLabel');
         end
         
-        function d=Predict(d)
+        function Predict(d)
             % get the probability in one slice
             featureMatrix=d.GetSliceFeature(d.currentSegIndex);
             Prob=d.randomForest.Predict(featureMatrix');
             P0=reshape(Prob,d.imageSize(1),d.imageSize(2));
             d.probabilityImage(:,:,d.currentSegIndex)=P0;
             d.ProbilityProcess();
-        end   
+        end
         
         function Label=GetSeedLabelImage(d)
             Label=d.seedImage;
@@ -280,7 +243,7 @@ classdef SlicSegAlgorithm < handle
             end
         end
         
-        function d=ProbabilityProcessUsingConnectivity(d)
+        function ProbabilityProcessUsingConnectivity(d)
             P0=d.probabilityImage(:,:,d.currentSegIndex);
             
             PL=P0>=0.5;
@@ -296,14 +259,14 @@ classdef SlicSegAlgorithm < handle
             P=P0;
             L(seedsIndex)=1;
             P(seedsIndex)=1.0;
-
+            
             I=d.volumeImage(:,:,d.currentSegIndex);
             fg=I(seedsIndex);
             fg_mean=mean(fg);
             fg_std=sqrt(var(double(fg)));
             fg_min=fg_mean-fg_std*3;
             fg_max=fg_mean+fg_std*2;
-
+            
             current=1;
             while(current<=seeds)
                 currentIndex=indexHW(current);
@@ -320,14 +283,14 @@ classdef SlicSegAlgorithm < handle
                 end
                 current=current+1;
             end
-
+            
             Lindex=find(L==0);
             P(Lindex)=P(Lindex)*0.4;
             
             d.probabilityImage(:,:,d.currentSegIndex)=P;
         end
         
-        function d=ProbabilityProcessUsingShapePrior(d)
+        function ProbabilityProcessUsingShapePrior(d)
             if(d.currentSegIndex<d.startIndex)
                 lastSeg=d.segImage(:,:,d.currentSegIndex+1);
             else
@@ -357,7 +320,7 @@ classdef SlicSegAlgorithm < handle
             d.probabilityImage(:,:,d.currentSegIndex)=P;
         end
         
-        function d=ProbilityProcess(d)
+        function ProbilityProcess(d)
             if(d.currentSegIndex==d.startIndex)
                 d.ProbabilityProcessUsingConnectivity();
             else
@@ -365,13 +328,12 @@ classdef SlicSegAlgorithm < handle
             end
         end
         
-        function d=GetSingleSliceSegmentation(d)
+        function GetSingleSliceSegmentation(d)
             % use max flow to get the segmentatio in one slice
-            addpath('./library/maxflow'); 
             currentI=d.volumeImage(:,:,d.currentSegIndex);
             currentP=d.probabilityImage(:,:,d.currentSegIndex);
             currentSeed=d.currentSeedLabel;
-       
+            
             [flow, currentSegLabel]=wgtmaxflowmex(currentI,currentSeed,currentP,d.lambda,d.sigma);
             currentSegLabel=1-currentSegLabel;
             se= strel('disk',2);
@@ -380,8 +342,8 @@ classdef SlicSegAlgorithm < handle
             d.segImage(:,:,d.currentSegIndex)=currentSegLabel(:,:);
         end
         
-        function d=UpdateSeedLabel(d,fgr,bgr)
-            % generate new training data (for random forest) and new seeds 
+        function UpdateSeedLabel(d,fgr,bgr)
+            % generate new training data (for random forest) and new seeds
             % (hard constraint for max-flow) based on segmentation in last slice
             tempSegLabel=d.segImage(:,:,d.currentSegIndex);
             fgSe1= strel('disk',fgr);
@@ -405,7 +367,7 @@ classdef SlicSegAlgorithm < handle
             d.currentSeedLabel(fgMask>0)=127;
             d.currentSeedLabel(bgMask>0)=255;
         end
-       
+        
     end
 end
 
