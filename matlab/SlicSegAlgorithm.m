@@ -138,7 +138,7 @@ classdef SlicSegAlgorithm < handle
             priorSegIndex      = d.startIndex;
             d.Train(currentTrainLabel,d.GetSliceFeature(currentSegIndex));
             d.Predict(currentSegIndex,priorSegIndex,currentSeedLabel);
-            d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
+            d.segImage(:,:,currentSegIndex)=d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
         end
         
         function SegmentationPropagate(d)
@@ -155,7 +155,7 @@ classdef SlicSegAlgorithm < handle
                 priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex-1;
                 d.Predict(currentSegIndex,priorSegIndex,currentSeedLabel);
-                d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
+                d.segImage(:,:,currentSegIndex)=d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
                 [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(d.segImage(:,:,currentSegIndex));
                 notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
             end
@@ -171,7 +171,7 @@ classdef SlicSegAlgorithm < handle
                 priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex+1;
                 d.Predict(currentSegIndex,priorSegIndex,currentSeedLabel);
-                d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
+                d.segImage(:,:,currentSegIndex)=d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
                 [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(d.segImage(:,:,currentSegIndex));
                 notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
             end
@@ -320,7 +320,7 @@ classdef SlicSegAlgorithm < handle
             end
         end
         
-        function GetSingleSliceSegmentation(d,currentSegIndex,currentSeedLabel)
+        function seg = GetSingleSliceSegmentation(d,currentSegIndex,currentSeedLabel)
             % use max flow to get the segmentatio in one slice
             currentI=d.volumeImage(:,:,currentSegIndex);
             currentP=d.probabilityImage(:,:,currentSegIndex);
@@ -331,7 +331,7 @@ classdef SlicSegAlgorithm < handle
             se= strel('disk',2);
             currentSegLabel=imclose(currentSegLabel,se);
             currentSegLabel=imopen(currentSegLabel,se);
-            d.segImage(:,:,currentSegIndex)=currentSegLabel(:,:);
+            seg=currentSegLabel(:,:);
         end
         
         function [currentSeedLabel,currentTrainLabel] = UpdateSeedLabel(d,currentSegImage)
