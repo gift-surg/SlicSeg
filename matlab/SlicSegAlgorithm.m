@@ -135,7 +135,6 @@ classdef SlicSegAlgorithm < handle
             currentSeedLabel  = SeedLabel;
             currentTrainLabel = SeedLabel;
             currentSegIndex   = d.startIndex;
-            priorSegIndex      = d.startIndex;
             d.Train(currentTrainLabel,SlicSegAlgorithm.GetSliceFeature(d.volumeImage(:,:,currentSegIndex)));
             d.probabilityImage(:,:,currentSegIndex)=d.PredictUsingConnectivity(currentSeedLabel,d.volumeImage(:,:,currentSegIndex));
             d.segImage(:,:,currentSegIndex)=SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel,d.volumeImage(:,:,currentSegIndex),d.probabilityImage(:,:,currentSegIndex),d.lambda,d.sigma);
@@ -147,33 +146,19 @@ classdef SlicSegAlgorithm < handle
                 error('index range should not be 0');
             end
             currentSegIndex=d.startIndex;
-            [currentSeedLabel,currentTrainLabel]=SlicSegAlgorithm.UpdateSeedLabel(d.segImage(:,:,currentSegIndex),d.innerDis,d.outerDis);
             for i=1:d.startIndex-d.sliceRange(1)
-                if(i>1)
-                    d.Train(currentTrainLabel,SlicSegAlgorithm.GetSliceFeature(d.volumeImage(:,:,currentSegIndex)));
-                end
                 priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex-1;
-                d.probabilityImage(:,:,currentSegIndex)=d.PredictUsingPrior(d.volumeImage(:,:,currentSegIndex),d.segImage(:,:,priorSegIndex));
-                d.segImage(:,:,currentSegIndex)=SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel,d.volumeImage(:,:,currentSegIndex),d.probabilityImage(:,:,currentSegIndex),d.lambda,d.sigma);
-                [currentSeedLabel,currentTrainLabel]=SlicSegAlgorithm.UpdateSeedLabel(d.segImage(:,:,currentSegIndex),d.innerDis,d.outerDis);
-                notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
+                d.TrainAndPropagate(d,i>1,currentSegIndex,priorSegIndex);
             end
             
             % propagate to following slices
             currentSegIndex=d.startIndex;
-            [currentSeedLabel,currentTrainLabel]=SlicSegAlgorithm.UpdateSeedLabel(d.segImage(:,:,currentSegIndex),d.innerDis,d.outerDis);
             notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
             for i=d.startIndex:d.sliceRange(2)-1
-                if(i>d.startIndex)
-                    d.Train(currentTrainLabel,SlicSegAlgorithm.GetSliceFeature(d.volumeImage(:,:,currentSegIndex)));
-                end
                 priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex+1;
-                d.probabilityImage(:,:,currentSegIndex)=d.PredictUsingPrior(d.volumeImage(:,:,currentSegIndex),d.segImage(:,:,priorSegIndex));
-                d.segImage(:,:,currentSegIndex)=SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel,d.volumeImage(:,:,currentSegIndex),d.probabilityImage(:,:,currentSegIndex),d.lambda,d.sigma);
-                [currentSeedLabel,currentTrainLabel]=SlicSegAlgorithm.UpdateSeedLabel(d.segImage(:,:,currentSegIndex),d.innerDis,d.outerDis);
-                notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
+                d.TrainAndPropagate(d,i>d.startIndex,currentSegIndex,priorSegIndex);
             end
         end
         
@@ -184,6 +169,15 @@ classdef SlicSegAlgorithm < handle
     end
     
     methods (Access=private)
+        function TrainAndPropagate(d,train,currentSegIndex,priorSegIndex)
+            [currentSeedLabel,currentTrainLabel]=SlicSegAlgorithm.UpdateSeedLabel(d.segImage(:,:,priorSegIndex),d.innerDis,d.outerDis);
+            if(train)
+                d.Train(currentTrainLabel,SlicSegAlgorithm.GetSliceFeature(d.volumeImage(:,:,priorSegIndex)));
+            end
+            d.probabilityImage(:,:,currentSegIndex)=d.PredictUsingPrior(d.volumeImage(:,:,currentSegIndex),d.segImage(:,:,priorSegIndex));
+            d.segImage(:,:,currentSegIndex)=SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel,d.volumeImage(:,:,currentSegIndex),d.probabilityImage(:,:,currentSegIndex),d.lambda,d.sigma);
+            notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));            
+        end
         
         function Train(d,currentTrainLabel,featureMatrix)
             % train the random forest using scribbles in on slice
