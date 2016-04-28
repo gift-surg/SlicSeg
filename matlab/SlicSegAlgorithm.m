@@ -147,7 +147,7 @@ classdef SlicSegAlgorithm < handle
                 error('index range should not be 0');
             end
             currentSegIndex=d.startIndex;
-            [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(currentSegIndex);
+            [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(d.segImage(:,:,currentSegIndex));
             for i=1:d.startIndex-d.sliceRange(1)
                 if(i>1)
                     d.Train(currentTrainLabel,d.GetSliceFeature(currentSegIndex));
@@ -156,13 +156,13 @@ classdef SlicSegAlgorithm < handle
                 currentSegIndex=currentSegIndex-1;
                 d.Predict(currentSegIndex,priorSegIndex,currentSeedLabel);
                 d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
-                [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(currentSegIndex);
+                [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(d.segImage(:,:,currentSegIndex));
                 notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
             end
             
             % propagate to following slices
             currentSegIndex=d.startIndex;
-            [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(currentSegIndex);
+            [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(d.segImage(:,:,currentSegIndex));
             notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
             for i=d.startIndex:d.sliceRange(2)-1
                 if(i>d.startIndex)
@@ -172,7 +172,7 @@ classdef SlicSegAlgorithm < handle
                 currentSegIndex=currentSegIndex+1;
                 d.Predict(currentSegIndex,priorSegIndex,currentSeedLabel);
                 d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
-                [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(currentSegIndex);
+                [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(d.segImage(:,:,currentSegIndex));
                 notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
             end
         end
@@ -334,13 +334,13 @@ classdef SlicSegAlgorithm < handle
             d.segImage(:,:,currentSegIndex)=currentSegLabel(:,:);
         end
         
-        function [currentSeedLabel,currentTrainLabel] = UpdateSeedLabel(d,currentSegIndex)
+        function [currentSeedLabel,currentTrainLabel] = UpdateSeedLabel(d,currentSegImage)
             % generate new training data (for random forest) and new seeds
             % (hard constraint for max-flow) based on segmentation in last slice
             
             fgr=d.innerDis;
             bgr=d.outerDis;
-            tempSegLabel=d.segImage(:,:,currentSegIndex);
+            tempSegLabel=currentSegImage;
             fgSe1= strel('disk',fgr);
             fgMask=imerode(tempSegLabel,fgSe1);
             if(length(find(fgMask>0))<100)
