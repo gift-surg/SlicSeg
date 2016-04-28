@@ -136,9 +136,9 @@ classdef SlicSegAlgorithm < handle
             currentTrainLabel = SeedLabel;
             currentSegIndex   = d.startIndex;
             priorSegIndex      = d.startIndex;
-            d.Train(currentTrainLabel,d.GetSliceFeature(currentSegIndex));
-            d.Predict(currentSegIndex,priorSegIndex,currentSeedLabel);
-            d.segImage(:,:,currentSegIndex)=d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
+            d.Train(currentTrainLabel,SlicSegAlgorithm.GetSliceFeature(d.volumeImage(:,:,currentSegIndex)));
+            d.probabilityImage(:,:,currentSegIndex)=d.PredictUsingConnectivity(currentSeedLabel,d.volumeImage(:,:,currentSegIndex));
+            d.segImage(:,:,currentSegIndex)=SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel,d.volumeImage(:,:,currentSegIndex),d.probabilityImage(:,:,currentSegIndex),d.lambda,d.sigma);
         end
         
         function SegmentationPropagate(d)
@@ -147,32 +147,32 @@ classdef SlicSegAlgorithm < handle
                 error('index range should not be 0');
             end
             currentSegIndex=d.startIndex;
-            [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(d.segImage(:,:,currentSegIndex));
+            [currentSeedLabel,currentTrainLabel]=SlicSegAlgorithm.UpdateSeedLabel(d.segImage(:,:,currentSegIndex),d.innerDis,d.outerDis);
             for i=1:d.startIndex-d.sliceRange(1)
                 if(i>1)
-                    d.Train(currentTrainLabel,d.GetSliceFeature(currentSegIndex));
+                    d.Train(currentTrainLabel,SlicSegAlgorithm.GetSliceFeature(d.volumeImage(:,:,currentSegIndex)));
                 end
                 priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex-1;
-                d.Predict(currentSegIndex,priorSegIndex,currentSeedLabel);
-                d.segImage(:,:,currentSegIndex)=d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
-                [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(d.segImage(:,:,currentSegIndex));
+                d.probabilityImage(:,:,currentSegIndex)=d.PredictUsingPrior(d.volumeImage(:,:,currentSegIndex),d.segImage(:,:,priorSegIndex));
+                d.segImage(:,:,currentSegIndex)=SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel,d.volumeImage(:,:,currentSegIndex),d.probabilityImage(:,:,currentSegIndex),d.lambda,d.sigma);
+                [currentSeedLabel,currentTrainLabel]=SlicSegAlgorithm.UpdateSeedLabel(d.segImage(:,:,currentSegIndex),d.innerDis,d.outerDis);
                 notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
             end
             
             % propagate to following slices
             currentSegIndex=d.startIndex;
-            [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(d.segImage(:,:,currentSegIndex));
+            [currentSeedLabel,currentTrainLabel]=SlicSegAlgorithm.UpdateSeedLabel(d.segImage(:,:,currentSegIndex),d.innerDis,d.outerDis);
             notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
             for i=d.startIndex:d.sliceRange(2)-1
                 if(i>d.startIndex)
-                    d.Train(currentTrainLabel,d.GetSliceFeature(currentSegIndex));
+                    d.Train(currentTrainLabel,SlicSegAlgorithm.GetSliceFeature(d.volumeImage(:,:,currentSegIndex)));
                 end
                 priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex+1;
-                d.Predict(currentSegIndex,priorSegIndex,currentSeedLabel);
-                d.segImage(:,:,currentSegIndex)=d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
-                [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(d.segImage(:,:,currentSegIndex));
+                d.probabilityImage(:,:,currentSegIndex)=d.PredictUsingPrior(d.volumeImage(:,:,currentSegIndex),d.segImage(:,:,priorSegIndex));
+                d.segImage(:,:,currentSegIndex)=SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel,d.volumeImage(:,:,currentSegIndex),d.probabilityImage(:,:,currentSegIndex),d.lambda,d.sigma);
+                [currentSeedLabel,currentTrainLabel]=SlicSegAlgorithm.UpdateSeedLabel(d.segImage(:,:,currentSegIndex),d.innerDis,d.outerDis);
                 notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
             end
         end
@@ -184,17 +184,6 @@ classdef SlicSegAlgorithm < handle
     end
     
     methods (Access=private)
-        function featureMatrix=GetSliceFeature(d,n)
-            % get the feature matrix for n-th slice
-            I=d.volumeImage(:,:,n);
-            dwtFeature=image2DWTfeature(I);
-            hogFeature=image2HOGFeature(I);
-            %             lbpFeature=image2LBPFeature(I);
-            intensityFeature=image2IntensityFeature(I);
-            % glmcfeatures=image2GLCMfeature(I);
-            % featureMatrix=[intensityFeature dwtFeature];% glmcfeatures];
-            featureMatrix=[intensityFeature hogFeature dwtFeature];
-        end
         
         function Train(d,currentTrainLabel,featureMatrix)
             % train the random forest using scribbles in on slice
@@ -217,14 +206,21 @@ classdef SlicSegAlgorithm < handle
             d.randomForest.Train(TrainingDataWithLabel');
         end
         
-        function Predict(d,currentSegIndex,priorSegIndex,currentSeedLabel)
+        function P=PredictUsingPrior(d,volSlice,priorSegSlice)
             % get the probability in one slice
-            featureMatrix=d.GetSliceFeature(currentSegIndex);
+            featureMatrix=SlicSegAlgorithm.GetSliceFeature(volSlice);
             Prob=d.randomForest.Predict(featureMatrix');
-            P0=reshape(Prob,d.imageSize(1),d.imageSize(2));
-            d.probabilityImage(:,:,currentSegIndex)=P0;
-            d.ProbabilityProcess(currentSegIndex,priorSegIndex,currentSeedLabel);
+            P0=reshape(Prob,size(volSlice, 1),size(volSlice, 2));            
+            P=SlicSegAlgorithm.ProbabilityProcessUsingShapePrior(P0,priorSegSlice);
         end
+        
+        function P=PredictUsingConnectivity(d,currentSeedLabel,volSlice)
+            % get the probability in one slice
+            featureMatrix=SlicSegAlgorithm.GetSliceFeature(volSlice);
+            Prob=d.randomForest.Predict(featureMatrix');
+            P0=reshape(Prob,size(volSlice, 1),size(volSlice, 2));
+            P=SlicSegAlgorithm.ProbabilityProcessUsingConnectivity(currentSeedLabel,P0,volSlice);
+        end        
         
         function Label=GetSeedLabelImage(d)
             Label=d.seedImage;
@@ -239,9 +235,60 @@ classdef SlicSegAlgorithm < handle
             end
         end
         
-        function ProbabilityProcessUsingConnectivity(d,currentSegIndex,currentSeedLabel)
-            P0=d.probabilityImage(:,:,currentSegIndex);
+    end
+    
+    methods (Static, Access=private)
+        function featureMatrix=GetSliceFeature(I)
+            % get the feature matrix for given slice
+            dwtFeature=image2DWTfeature(I);
+            hogFeature=image2HOGFeature(I);
+            %             lbpFeature=image2LBPFeature(I);
+            intensityFeature=image2IntensityFeature(I);
+            % glmcfeatures=image2GLCMfeature(I);
+            % featureMatrix=[intensityFeature dwtFeature];% glmcfeatures];
+            featureMatrix=[intensityFeature hogFeature dwtFeature];
+        end
+        
+        function seg = GetSingleSliceSegmentation(currentSeedLabel,currentI,currentP,lambda,sigma)
+            % use max flow to get the segmentatio in one slice
+            currentSeed=currentSeedLabel;
             
+            [flow, currentSegLabel]=wgtmaxflowmex(currentI,currentSeed,currentP,lambda,sigma);
+            currentSegLabel=1-currentSegLabel;
+            se= strel('disk',2);
+            currentSegLabel=imclose(currentSegLabel,se);
+            currentSegLabel=imopen(currentSegLabel,se);
+            seg=currentSegLabel(:,:);
+        end
+        
+        function [currentSeedLabel,currentTrainLabel] = UpdateSeedLabel(currentSegImage,fgr,bgr)
+            % generate new training data (for random forest) and new seeds
+            % (hard constraint for max-flow) based on segmentation in last slice
+            
+            tempSegLabel=currentSegImage;
+            fgSe1= strel('disk',fgr);
+            fgMask=imerode(tempSegLabel,fgSe1);
+            if(length(find(fgMask>0))<100)
+                fgMask=bwmorph(tempSegLabel,'skel',Inf);
+            else
+                fgMask=bwmorph(fgMask,'skel',Inf);
+            end
+            bgSe1= strel('disk',bgr);
+            bgSe2= strel('disk',bgr+1);
+            fgDilate1=imdilate(tempSegLabel,bgSe1);
+            fgDilate2=imdilate(tempSegLabel,bgSe2);
+            bgMask=fgDilate2-fgDilate1;
+            currentTrainLabel=uint8(zeros(size(tempSegLabel)));
+            currentTrainLabel(fgMask>0)=127;
+            currentTrainLabel(bgMask>0)=255;
+            
+            bgMask=1-fgDilate1;
+            currentSeedLabel=uint8(zeros(size(tempSegLabel)));
+            currentSeedLabel(fgMask>0)=127;
+            currentSeedLabel(bgMask>0)=255;
+        end
+        
+        function P = ProbabilityProcessUsingConnectivity(currentSeedLabel,P0,I)
             PL=P0>=0.5;
             pSe= strel('disk',3);
             pMask=imclose(PL,pSe);
@@ -256,7 +303,7 @@ classdef SlicSegAlgorithm < handle
             L(seedsIndex)=1;
             P(seedsIndex)=1.0;
             
-            I=d.volumeImage(:,:,currentSegIndex);
+            
             fg=I(seedsIndex);
             fg_mean=mean(fg);
             fg_std=sqrt(var(double(fg)));
@@ -282,12 +329,9 @@ classdef SlicSegAlgorithm < handle
             
             Lindex=find(L==0);
             P(Lindex)=P(Lindex)*0.4;
-            
-            d.probabilityImage(:,:,currentSegIndex)=P;
         end
         
-        function ProbabilityProcessUsingShapePrior(d,currentSegIndex,priorSegIndex)
-            lastSeg=d.segImage(:,:,priorSegIndex);
+        function P = ProbabilityProcessUsingShapePrior(P0,lastSeg)
             Isize=size(lastSeg);
             dis=zeros(Isize);
             se= strel('disk',1);
@@ -303,66 +347,12 @@ classdef SlicSegAlgorithm < handle
             end
             maxdis=currentdis;
             
-            P=d.probabilityImage(:,:,currentSegIndex);
+            P=P0;
             outsideIndex=intersect(find(dis==0),find(P>0.5));
             P(outsideIndex)=0.4*P(outsideIndex);
             insideIndex=intersect(find(dis>0) , find(P<0.8));
             P(insideIndex)=P(insideIndex)+0.2*dis(insideIndex)/maxdis;
-            
-            d.probabilityImage(:,:,currentSegIndex)=P;
-        end
-        
-        function ProbabilityProcess(d,currentSegIndex,priorSegIndex,currentSeedLabel)
-            if(currentSegIndex==priorSegIndex)
-                d.ProbabilityProcessUsingConnectivity(currentSegIndex,currentSeedLabel);
-            else
-                d.ProbabilityProcessUsingShapePrior(currentSegIndex,priorSegIndex);
-            end
-        end
-        
-        function seg = GetSingleSliceSegmentation(d,currentSegIndex,currentSeedLabel)
-            % use max flow to get the segmentatio in one slice
-            currentI=d.volumeImage(:,:,currentSegIndex);
-            currentP=d.probabilityImage(:,:,currentSegIndex);
-            currentSeed=currentSeedLabel;
-            
-            [flow, currentSegLabel]=wgtmaxflowmex(currentI,currentSeed,currentP,d.lambda,d.sigma);
-            currentSegLabel=1-currentSegLabel;
-            se= strel('disk',2);
-            currentSegLabel=imclose(currentSegLabel,se);
-            currentSegLabel=imopen(currentSegLabel,se);
-            seg=currentSegLabel(:,:);
-        end
-        
-        function [currentSeedLabel,currentTrainLabel] = UpdateSeedLabel(d,currentSegImage)
-            % generate new training data (for random forest) and new seeds
-            % (hard constraint for max-flow) based on segmentation in last slice
-            
-            fgr=d.innerDis;
-            bgr=d.outerDis;
-            tempSegLabel=currentSegImage;
-            fgSe1= strel('disk',fgr);
-            fgMask=imerode(tempSegLabel,fgSe1);
-            if(length(find(fgMask>0))<100)
-                fgMask=bwmorph(tempSegLabel,'skel',Inf);
-            else
-                fgMask=bwmorph(fgMask,'skel',Inf);
-            end
-            bgSe1= strel('disk',bgr);
-            bgSe2= strel('disk',bgr+1);
-            fgDilate1=imdilate(tempSegLabel,bgSe1);
-            fgDilate2=imdilate(tempSegLabel,bgSe2);
-            bgMask=fgDilate2-fgDilate1;
-            currentTrainLabel=uint8(zeros(size(tempSegLabel)));
-            currentTrainLabel(fgMask>0)=127;
-            currentTrainLabel(bgMask>0)=255;
-            
-            bgMask=1-fgDilate1;
-            currentSeedLabel=uint8(zeros(size(tempSegLabel)));
-            currentSeedLabel(fgMask>0)=127;
-            currentSeedLabel(bgMask>0)=255;
-        end
-        
+        end        
     end
 end
 
