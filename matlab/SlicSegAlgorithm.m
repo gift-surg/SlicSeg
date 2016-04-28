@@ -135,8 +135,9 @@ classdef SlicSegAlgorithm < handle
             currentSeedLabel  = SeedLabel;
             currentTrainLabel = SeedLabel;
             currentSegIndex   = d.startIndex;
-            d.Train(currentSegIndex,currentSeedLabel,currentTrainLabel);
-            d.Predict(currentSegIndex,currentSeedLabel);
+            priorSegIndex      = d.startIndex;
+            d.Train(currentSeedLabel,currentTrainLabel,d.GetSliceFeature(currentSegIndex));
+            d.Predict(currentSegIndex,priorSegIndex,currentSeedLabel);
             d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
         end
         
@@ -149,15 +150,15 @@ classdef SlicSegAlgorithm < handle
             [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(currentSegIndex);
             for i=1:d.startIndex-d.sliceRange(1)
                 if(i>1)
-                    d.Train(currentSegIndex,currentSeedLabel,currentTrainLabel);
+                    d.Train(currentSeedLabel,currentTrainLabel,d.GetSliceFeature(currentSegIndex));
                 end
+                priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex-1;
-                d.Predict(currentSegIndex,currentSeedLabel);
+                d.Predict(currentSegIndex,priorSegIndex,currentSeedLabel);
                 d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
                 [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(currentSegIndex);
                 notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
             end
-            
             
             % propagate to following slices
             currentSegIndex=d.startIndex;
@@ -165,10 +166,11 @@ classdef SlicSegAlgorithm < handle
             notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
             for i=d.startIndex:d.sliceRange(2)-1
                 if(i>d.startIndex)
-                    d.Train(currentSegIndex,currentSeedLabel,currentTrainLabel);
+                    d.Train(currentSeedLabel,currentTrainLabel,d.GetSliceFeature(currentSegIndex));
                 end
+                priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex+1;
-                d.Predict(currentSegIndex,currentSeedLabel);
+                d.Predict(currentSegIndex,priorSegIndex,currentSeedLabel);
                 d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
                 [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(currentSegIndex);
                 notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
@@ -194,7 +196,7 @@ classdef SlicSegAlgorithm < handle
             featureMatrix=[intensityFeature hogFeature dwtFeature];
         end
         
-        function Train(d,currentSegIndex,currentSeedLabel,currentTrainLabel)
+        function Train(d,currentSeedLabel,currentTrainLabel,featureMatrix)
             % train the random forest using scribbles in on slice
             if(isempty(currentSeedLabel) || isempty(find(currentSeedLabel>0)))
                 error('the training set is empty');
@@ -205,7 +207,6 @@ classdef SlicSegAlgorithm < handle
             if(totalseeds==0)
                 error('the training set is empty');
             end
-            featureMatrix=d.GetSliceFeature(currentSegIndex);
             TrainingSet=zeros(totalseeds,size(featureMatrix,2));
             TrainingLabel=zeros(totalseeds,1);
             TrainingSet(1:length(forground),:)=featureMatrix(forground,:);
@@ -216,13 +217,13 @@ classdef SlicSegAlgorithm < handle
             d.randomForest.Train(TrainingDataWithLabel');
         end
         
-        function Predict(d,currentSegIndex,currentSeedLabel)
+        function Predict(d,currentSegIndex,priorSegIndex,currentSeedLabel)
             % get the probability in one slice
             featureMatrix=d.GetSliceFeature(currentSegIndex);
             Prob=d.randomForest.Predict(featureMatrix');
             P0=reshape(Prob,d.imageSize(1),d.imageSize(2));
             d.probabilityImage(:,:,currentSegIndex)=P0;
-            d.ProbabilityProcess(currentSegIndex,currentSeedLabel);
+            d.ProbabilityProcess(currentSegIndex,priorSegIndex,currentSeedLabel);
         end
         
         function Label=GetSeedLabelImage(d)
@@ -285,12 +286,8 @@ classdef SlicSegAlgorithm < handle
             d.probabilityImage(:,:,currentSegIndex)=P;
         end
         
-        function ProbabilityProcessUsingShapePrior(d,currentSegIndex)
-            if(currentSegIndex<d.startIndex)
-                lastSeg=d.segImage(:,:,currentSegIndex+1);
-            else
-                lastSeg=d.segImage(:,:,currentSegIndex-1);
-            end
+        function ProbabilityProcessUsingShapePrior(d,currentSegIndex,priorSegIndex)
+            lastSeg=d.segImage(:,:,priorSegIndex);
             Isize=size(lastSeg);
             dis=zeros(Isize);
             se= strel('disk',1);
@@ -315,11 +312,11 @@ classdef SlicSegAlgorithm < handle
             d.probabilityImage(:,:,currentSegIndex)=P;
         end
         
-        function ProbabilityProcess(d,currentSegIndex,currentSeedLabel)
-            if(currentSegIndex==d.startIndex)
+        function ProbabilityProcess(d,currentSegIndex,priorSegIndex,currentSeedLabel)
+            if(currentSegIndex==priorSegIndex)
                 d.ProbabilityProcessUsingConnectivity(currentSegIndex,currentSeedLabel);
             else
-                d.ProbabilityProcessUsingShapePrior(currentSegIndex);
+                d.ProbabilityProcessUsingShapePrior(currentSegIndex,priorSegIndex);
             end
         end
         
@@ -337,7 +334,7 @@ classdef SlicSegAlgorithm < handle
             d.segImage(:,:,currentSegIndex)=currentSegLabel(:,:);
         end
         
-        function [currentSeedLabel, currentTrainLabel] = UpdateSeedLabel(d,currentSegIndex)
+        function [currentSeedLabel,currentTrainLabel] = UpdateSeedLabel(d,currentSegIndex)
             % generate new training data (for random forest) and new seeds
             % (hard constraint for max-flow) based on segmentation in last slice
             
