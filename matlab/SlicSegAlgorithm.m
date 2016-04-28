@@ -136,7 +136,7 @@ classdef SlicSegAlgorithm < handle
             currentTrainLabel = SeedLabel;
             currentSegIndex   = d.startIndex;
             priorSegIndex      = d.startIndex;
-            d.Train(currentSeedLabel,currentTrainLabel,d.GetSliceFeature(currentSegIndex));
+            d.Train(currentTrainLabel,d.GetSliceFeature(currentSegIndex));
             d.Predict(currentSegIndex,priorSegIndex,currentSeedLabel);
             d.GetSingleSliceSegmentation(currentSegIndex,currentSeedLabel);
         end
@@ -150,7 +150,7 @@ classdef SlicSegAlgorithm < handle
             [currentSeedLabel,currentTrainLabel]=d.UpdateSeedLabel(currentSegIndex);
             for i=1:d.startIndex-d.sliceRange(1)
                 if(i>1)
-                    d.Train(currentSeedLabel,currentTrainLabel,d.GetSliceFeature(currentSegIndex));
+                    d.Train(currentTrainLabel,d.GetSliceFeature(currentSegIndex));
                 end
                 priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex-1;
@@ -166,7 +166,7 @@ classdef SlicSegAlgorithm < handle
             notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
             for i=d.startIndex:d.sliceRange(2)-1
                 if(i>d.startIndex)
-                    d.Train(currentSeedLabel,currentTrainLabel,d.GetSliceFeature(currentSegIndex));
+                    d.Train(currentTrainLabel,d.GetSliceFeature(currentSegIndex));
                 end
                 priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex+1;
@@ -196,9 +196,9 @@ classdef SlicSegAlgorithm < handle
             featureMatrix=[intensityFeature hogFeature dwtFeature];
         end
         
-        function Train(d,currentSeedLabel,currentTrainLabel,featureMatrix)
+        function Train(d,currentTrainLabel,featureMatrix)
             % train the random forest using scribbles in on slice
-            if(isempty(currentSeedLabel) || isempty(find(currentSeedLabel>0)))
+            if(isempty(currentTrainLabel) || isempty(find(currentTrainLabel>0)))
                 error('the training set is empty');
             end
             forground=find(currentTrainLabel==127);
