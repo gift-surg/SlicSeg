@@ -30,52 +30,52 @@ classdef SlicSegAlgorithm < handle
     end
     
     methods
-        function d=SlicSegAlgorithm
-            d.startIndex=0;
-            d.sliceRange=[0,0];
-            d.randomForest = RandomForestWrapper;
+        function obj = SlicSegAlgorithm
+            obj.startIndex=0;
+            obj.sliceRange=[0,0];
+            obj.randomForest=RandomForestWrapper;
             
-            d.lambda=5.0;
-            d.sigma=3.5;
-            d.innerDis=5;
-            d.outerDis=6;
+            obj.lambda=5.0;
+            obj.sigma=3.5;
+            obj.innerDis=5;
+            obj.outerDis=6;
         end
         
-        function imageSize = get.imageSize(d)
-            if isempty(d.volumeImage)
+        function imageSize = get.imageSize(obj)
+            if isempty(obj.volumeImage)
                 imageSize=[0,0,0];
             else
-                imageSize=size(d.volumeImage);
+                imageSize=size(obj.volumeImage);
             end
         end
         
-        function set.volumeImage(d,volumeImage)
-            d.volumeImage=volumeImage;
-            d.ResetSegmentationResult();
+        function set.volumeImage(obj,volumeImage)
+            obj.volumeImage=volumeImage;
+            obj.ResetSegmentationResult();
         end
         
-        function SetMultipleProperties(d,varargin)
+        function SetMultipleProperties(obj,varargin)
             argin=varargin;
             while(length(argin)>=2)
-                d.(argin{1})=argin{2};
+                obj.(argin{1})=argin{2};
                 argin=argin(3:end);
             end
         end
         
-        function val=Get2DSlice(d,dataName, sliceIndex)
+        function val=Get2DSlice(obj,dataName, sliceIndex)
             switch dataName
                 case 'volumeImage'
-                    val=d.volumeImage(:,:,sliceIndex);
+                    val=obj.volumeImage(:,:,sliceIndex);
                 case 'probabilityImage'
-                    val=d.probabilityImage(:,:,sliceIndex);
+                    val=obj.probabilityImage(:,:,sliceIndex);
                 case 'segImage'
-                    val=d.segImage(:,:,sliceIndex);
+                    val=obj.segImage(:,:,sliceIndex);
                 otherwise
                     error([prop_name,'is not a valid image']);
             end
         end
         
-        function OpenImage(d,imgFolderName)
+        function OpenImage(obj,imgFolderName)
             % read volume image from a folder, which contains a chain of
             % *.png images indexed from 1 to the number of slices.
             dirinfo=dir(fullfile(imgFolderName,'*.png'));
@@ -91,11 +91,11 @@ classdef SlicSegAlgorithm < handle
                 tempI=imread(tempfilename);
                 volume(:,:,i)=tempI(:,:);
             end
-            d.volumeImage = volume;
+            obj.volumeImage = volume;
             
         end
         
-        function OpenScribbleImage(d,labelFileName)
+        function OpenScribbleImage(obj,labelFileName)
             % read scribbles in the start slice (*.png rgb file)
             rgbLabel=imread(labelFileName);
             ISize=size(rgbLabel);
@@ -109,80 +109,80 @@ classdef SlicSegAlgorithm < handle
                     end
                 end
             end
-            d.seedImage = ILabel;
+            obj.seedImage = ILabel;
             disp('seed image has been loaded successfully');
             
         end
         
-        function ResetSegmentationResult(d)
-            d.seedImage=uint8(zeros(d.imageSize(1),d.imageSize(2)));
-            d.segImage=uint8(zeros(d.imageSize));
-            d.probabilityImage=zeros(d.imageSize);
+        function ResetSegmentationResult(obj)
+            obj.seedImage=uint8(zeros(obj.imageSize(1),obj.imageSize(2)));
+            obj.segImage=uint8(zeros(obj.imageSize));
+            obj.probabilityImage=zeros(obj.imageSize);
         end
         
-        function SaveSegmentationResult(d,segSaveFolder)
-            for index=1:d.imageSize(3)
+        function SaveSegmentationResult(obj,segSaveFolder)
+            for index=1:obj.imageSize(3)
                 segFileName=fullfile(segSaveFolder,[num2str(index) '_seg.png']);
-                imwrite(d.segImage(:,:,index)*255,segFileName);
+                imwrite(obj.segImage(:,:,index)*255,segFileName);
             end
             
         end
         
-        function StartSliceSegmentation(d)
-            if(d.startIndex==0)
+        function StartSliceSegmentation(obj)
+            if(obj.startIndex==0)
                 error('slice index should not be 0');
             end
             % segmentation in the start slice
-            SeedLabel=d.GetSeedLabelImage();
+            SeedLabel=obj.GetSeedLabelImage();
             currentSeedLabel  = SeedLabel;
             currentTrainLabel = SeedLabel;
-            currentSegIndex   = d.startIndex;
-            d.Train(currentTrainLabel,SlicSegAlgorithm.GetSliceFeature(d.volumeImage(:,:,currentSegIndex)));
-            d.probabilityImage(:,:,currentSegIndex)=d.randomForest.PredictUsingConnectivity(currentSeedLabel,d.volumeImage(:,:,currentSegIndex));
-            d.segImage(:,:,currentSegIndex)=SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel,d.volumeImage(:,:,currentSegIndex),d.probabilityImage(:,:,currentSegIndex),d.lambda,d.sigma);
+            currentSegIndex   = obj.startIndex;
+            obj.Train(currentTrainLabel,SlicSegAlgorithm.GetSliceFeature(obj.volumeImage(:,:,currentSegIndex)));
+            obj.probabilityImage(:,:,currentSegIndex)=obj.randomForest.PredictUsingConnectivity(currentSeedLabel,obj.volumeImage(:,:,currentSegIndex));
+            obj.segImage(:,:,currentSegIndex)=SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel,obj.volumeImage(:,:,currentSegIndex),obj.probabilityImage(:,:,currentSegIndex),obj.lambda,obj.sigma);
         end
         
-        function SegmentationPropagate(d)
+        function SegmentationPropagate(obj)
             % propagate to previous slices
-            if(d.sliceRange(1)==0 || d.sliceRange(2)==0)
+            if(obj.sliceRange(1)==0 || obj.sliceRange(2)==0)
                 error('index range should not be 0');
             end
-            currentSegIndex=d.startIndex;
-            for i=1:d.startIndex-d.sliceRange(1)
+            currentSegIndex=obj.startIndex;
+            for i=1:obj.startIndex-obj.sliceRange(1)
                 priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex-1;
-                d.TrainAndPropagate(d,i>1,currentSegIndex,priorSegIndex);
+                obj.TrainAndPropagate(i>1,currentSegIndex,priorSegIndex);
             end
             
             % propagate to following slices
-            currentSegIndex=d.startIndex;
-            notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
-            for i=d.startIndex:d.sliceRange(2)-1
+            currentSegIndex=obj.startIndex;
+            notify(obj,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
+            for i=obj.startIndex:obj.sliceRange(2)-1
                 priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex+1;
-                d.TrainAndPropagate(d,i>d.startIndex,currentSegIndex,priorSegIndex);
+                obj.TrainAndPropagate(i>obj.startIndex,currentSegIndex,priorSegIndex);
             end
         end
         
-        function RunSegmention(d)
-            d.StartSliceSegmentation();
-            d.SegmentationPropagate();
+        function RunSegmention(obj)
+            obj.StartSliceSegmentation();
+            obj.SegmentationPropagate();
         end
     end
     
     methods (Access=private)
-        function TrainAndPropagate(d,train,currentSegIndex,priorSegIndex)
-            [currentSeedLabel,currentTrainLabel]=SlicSegAlgorithm.UpdateSeedLabel(d.segImage(:,:,priorSegIndex),d.innerDis,d.outerDis);
+        function TrainAndPropagate(obj,train,currentSegIndex,priorSegIndex)
+            [currentSeedLabel,currentTrainLabel]=SlicSegAlgorithm.UpdateSeedLabel(obj.segImage(:,:,priorSegIndex),obj.innerDis,obj.outerDis);
             if(train)
-                d.randomForest.Train(currentTrainLabel,SlicSegAlgorithm.GetSliceFeature(d.volumeImage(:,:,priorSegIndex)));
+                obj.randomForest.Train(currentTrainLabel,SlicSegAlgorithm.GetSliceFeature(obj.volumeImage(:,:,priorSegIndex)));
             end
-            d.probabilityImage(:,:,currentSegIndex)=d.randomForest.PredictUsingPrior(d.volumeImage(:,:,currentSegIndex),d.segImage(:,:,priorSegIndex));
-            d.segImage(:,:,currentSegIndex)=SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel,d.volumeImage(:,:,currentSegIndex),d.probabilityImage(:,:,currentSegIndex),d.lambda,d.sigma);
-            notify(d,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));            
+            obj.probabilityImage(:,:,currentSegIndex)=obj.randomForest.PredictUsingPrior(obj.volumeImage(:,:,currentSegIndex),obj.segImage(:,:,priorSegIndex));
+            obj.segImage(:,:,currentSegIndex)=SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel,obj.volumeImage(:,:,currentSegIndex),obj.probabilityImage(:,:,currentSegIndex),obj.lambda,obj.sigma);
+            notify(obj,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));            
         end
         
-        function Label=GetSeedLabelImage(d)
-            Label=d.seedImage;
+        function Label=GetSeedLabelImage(obj)
+            Label=obj.seedImage;
             [H,W]=size(Label);
             for i=5:5:H-5
                 Label(i,5)=255;
