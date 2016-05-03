@@ -182,6 +182,7 @@ global slicSeg;
 global ILabel;
 ILabel=uint8(zeros(size(ILabel)));
 slicSeg.ResetSegmentationResult();
+slicSeg.ResetSeedPoints();
 showResult();
 
 % --- Executes on slider movement.

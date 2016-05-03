@@ -22,7 +22,7 @@ classdef SlicSegAlgorithm < handle
     end
     
     events
-        SegmentationProgress
+        SegmentationProgress % Event fired after each image slice has been segmented
     end
     
     properties (Access = private)
@@ -30,12 +30,9 @@ classdef SlicSegAlgorithm < handle
     end
     
     methods
-        function obj = SlicSegAlgorithm()
-            obj.startIndex=0;
-        end
-        
         function RunSegmention(obj)
             % Runs the full segmentation. The seed image and start index must be set before calling this method.
+
             obj.StartSliceSegmentation();
             obj.SegmentationPropagate();
         end
@@ -43,16 +40,18 @@ classdef SlicSegAlgorithm < handle
         function StartSliceSegmentation(obj)
             % Creates a segmentation for the image slice specified in
             % startIndex. The seed image and start index must be set before calling this method.
-            if(obj.startIndex==0)
-                error('slice index should not be 0');
+            
+            if(isempty(obj.startIndex) || isempty(obj.seedImage))
+                error('startIndex and seedImage must be set before calling StartSliceSegmentation()');
+            end
+            if((obj.startIndex < 1) || (obj.startIndex > obj.volumeImage.ImageSize(obj.orientation)))
+                 error('startIndex is not set to a valid value in the range for this image size and orientation');
             end
             seedLabels = obj.GetSeedLabelImage();
-            currentSeedLabel  = seedLabels;
-            currentTrainLabel = seedLabels;
             currentSegIndex = obj.startIndex;
             volumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex, obj.orientation);
-            obj.randomForest.Train(currentTrainLabel, volumeSlice);
-            [probabilitySlice, segmentationSlice] = obj.randomForest.PredictUsingConnectivity(currentSeedLabel, volumeSlice, obj.lambda, obj.sigma);
+            obj.randomForest.Train(seedLabels, volumeSlice);
+            [probabilitySlice, segmentationSlice] = obj.randomForest.PredictUsingConnectivity(seedLabels, volumeSlice, obj.lambda, obj.sigma);
             obj.UpdateResults(currentSegIndex, segmentationSlice, probabilitySlice);
         end
         
@@ -112,12 +111,16 @@ classdef SlicSegAlgorithm < handle
         end
 
         function ResetSegmentationResult(obj)
-            % Deletes the current seed points and segmentation results
-            sliceSize = obj.volumeImage.get2DSliceSlize(obj.orientation);
-            obj.seedImage = zeros(sliceSize, 'uint8');
+            % Deletes the current segmentation results
             fullImageSize = obj.volumeImage.getImageSize;
             obj.segImage = ImageWrapper(zeros(fullImageSize, 'uint8'));
             obj.probabilityImage = ImageWrapper(zeros(fullImageSize));
+        end
+        
+        function ResetSeedPoints(obj)
+            % Deletes the current seed points
+            sliceSize = obj.volumeImage.get2DSliceSlize(obj.orientation);
+            obj.seedImage = zeros(sliceSize, 'uint8');
         end        
     end
     
@@ -140,22 +143,22 @@ classdef SlicSegAlgorithm < handle
             notify(obj,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
         end
         
-        function Label=GetSeedLabelImage(obj)
-            Label=obj.seedImage;
-            [H,W]=size(Label);
-            for i=5:5:H-5
-                Label(i,5)=255;
-                Label(i,W-5)=255;
+        function label = GetSeedLabelImage(obj)
+            label = obj.seedImage;
+            [H,W] = size(label);
+            for i = 5:5:H-5
+                label(i,5)=255;
+                label(i,W-5)=255;
             end
-            for j=5:5:W-5
-                Label(5,j)=255;
-                Label(H-5,j)=255;
+            for j = 5:5:W-5
+                label(5,j)=255;
+                label(H-5,j)=255;
             end
         end
     end
     
     methods (Static, Access=private)
-        function [currentSeedLabel,currentTrainLabel] = UpdateSeedLabel(currentSegImage,fgr,bgr)
+        function [currentSeedLabel, currentTrainLabel] = UpdateSeedLabel(currentSegImage, fgr, bgr)
             % generate new training data (for random forest) and new seeds
             % (hard constraint for max-flow) based on segmentation in last slice
             
