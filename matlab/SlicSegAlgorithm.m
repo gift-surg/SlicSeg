@@ -41,63 +41,19 @@ classdef SlicSegAlgorithm < handle
             obj.outerDis=6;
         end
         
-        function set.volumeImage(obj, volumeImage)
-            obj.volumeImage = ImageWrapper(volumeImage);
-            obj.ResetSegmentationResult();
-        end
-        
-        function OpenImage(obj,imgFolderName)
-            % read volume image from a folder, which contains a chain of
-            % *.png images indexed from 1 to the number of slices.
-            dirinfo=dir(fullfile(imgFolderName,'*.png'));
-            sliceNumber=length(dirinfo);
-            
-            longfilename=fullfile(imgFolderName,'1.png');
-            I=imread(longfilename);
-            size2d=size(I);
-            size3d=[size2d, sliceNumber];
-            volume=uint8(zeros(size3d));
-            for i=1:sliceNumber
-                tempfilename=fullfile(imgFolderName,[num2str(i) '.png']);
-                tempI=imread(tempfilename);
-                volume(:,:,i)=tempI(:,:);
-            end
-            obj.volumeImage = volume;
-            
-        end
-        
-        function OpenScribbleImage(obj,labelFileName)
-            % read scribbles in the start slice (*.png rgb file)
-            rgbLabel=imread(labelFileName);
-            ISize=size(rgbLabel);
-            ILabel=uint8(zeros(ISize(1),ISize(2)));
-            for i=1:ISize(1)
-                for j=1:ISize(2)
-                    if(rgbLabel(i,j,1)==255 && rgbLabel(i,j,2)==0 && rgbLabel(i,j,3)==0)
-                        ILabel(i,j)=127;
-                    elseif(rgbLabel(i,j,1)==0 && rgbLabel(i,j,2)==0 && rgbLabel(i,j,3)==255)
-                        ILabel(i,j)=255;
-                    end
-                end
-            end
-            obj.seedImage = ILabel;
-            disp('seed image has been loaded successfully');
-            
-        end
-        
-        function SaveSegmentationResult(obj,segSaveFolder)
-            for index = 1 : obj.segImage.ImageSize(obj.orientation)
-                segFileName=fullfile(segSaveFolder,[num2str(index) '_seg.png']);
-                imwrite(obj.segImage(:,:,index)*255,segFileName);
-            end
+        function RunSegmention(obj)
+            % Runs the full segmentation. The seed image and start index must be set before calling this method.
+            obj.StartSliceSegmentation();
+            obj.SegmentationPropagate();
         end
         
         function StartSliceSegmentation(obj)
-            % Creates a segmentation from the slice specified in startIndex
+            % Creates a segmentation for the image slice specified in
+            % startIndex. The seed image and start index must be set before calling this method.
+            
             if(obj.startIndex==0)
                 error('slice index should not be 0');
             end
-            % segmentation in the start slice
             seedLabels = obj.GetSeedLabelImage();
             currentSeedLabel  = seedLabels;
             currentTrainLabel = seedLabels;
@@ -105,12 +61,12 @@ classdef SlicSegAlgorithm < handle
             volumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex, obj.orientation);
             obj.randomForest.Train(currentTrainLabel, volumeSlice);
             [probabilitySlice, segmentationSlice] = obj.randomForest.PredictUsingConnectivity(currentSeedLabel, volumeSlice, obj.lambda, obj.sigma);
-            obj.segImage.replaceImageSlice(segmentationSlice, currentSegIndex, obj.orientation);
-            obj.probabilityImage.replaceImageSlice(probabilitySlice, currentSegIndex, obj.orientation);
+            obj.UpdateResults(currentSegIndex, segmentationSlice, probabilitySlice);
         end
         
         function SegmentationPropagate(obj)
             % Propagates the segmentation obtained from StartSliceSegmentation() to the remaining slices
+            
             if(obj.sliceRange(1)==0 || obj.sliceRange(2)==0)
                 error('index range should not be 0');
             end
@@ -130,12 +86,39 @@ classdef SlicSegAlgorithm < handle
                 obj.TrainAndPropagate(i>obj.startIndex,currentSegIndex,priorSegIndex);
             end
         end
-        
-        function RunSegmention(obj)
-            obj.StartSliceSegmentation();
-            obj.SegmentationPropagate();
+
+        function set.volumeImage(obj, volumeImage)
+            obj.volumeImage = ImageWrapper(volumeImage);
+            obj.ResetSegmentationResult();
+        end
+
+        function OpenScribbleImage(obj,labelFileName)
+            % read scribbles in the start slice (*.png rgb file)
+            rgbLabel=imread(labelFileName);
+            ISize=size(rgbLabel);
+            ILabel=uint8(zeros(ISize(1),ISize(2)));
+            for i=1:ISize(1)
+                for j=1:ISize(2)
+                    if(rgbLabel(i,j,1)==255 && rgbLabel(i,j,2)==0 && rgbLabel(i,j,3)==0)
+                        ILabel(i,j)=127;
+                    elseif(rgbLabel(i,j,1)==0 && rgbLabel(i,j,2)==0 && rgbLabel(i,j,3)==255)
+                        ILabel(i,j)=255;
+                    end
+                end
+            end
+            obj.seedImage = ILabel;
+            disp('seed image has been loaded successfully');
         end
         
+        function SaveSegmentationResult(obj,segSaveFolder)
+            for index = 1 : obj.segImage.ImageSize(obj.orientation)
+                segFileName=fullfile(segSaveFolder,[num2str(index) '_seg.png']);
+                imwrite(obj.segImage(:,:,index)*255,segFileName);
+            end
+        end
+        
+        
+
         function ResetSegmentationResult(obj)
             % Deletes the current seed points and segmentation results
             sliceSize = obj.volumeImage.get2DSliceSlize(obj.orientation);
@@ -156,11 +139,13 @@ classdef SlicSegAlgorithm < handle
             end
             currentVolumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex, obj.orientation);
             [probabilitySlice, segmentationSlice] = obj.randomForest.PredictUsingPrior(currentSeedLabel, currentVolumeSlice, priorSegmentedSlice, obj.lambda, obj.sigma);
-
+            obj.UpdateResults(currentSegIndex, segmentationSlice, probabilitySlice);
+        end
+        
+        function UpdateResults(obj, currentSegIndex, segmentationSlice, probabilitySlice)
             obj.segImage.replaceImageSlice(segmentationSlice, currentSegIndex, obj.orientation);
-            obj.probabilityImage.replaceImageSlice(probabilitySlice, currentSegIndex, obj.orientation);            
-            
-            notify(obj,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));            
+            obj.probabilityImage.replaceImageSlice(probabilitySlice, currentSegIndex, obj.orientation);
+            notify(obj,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
         end
         
         function Label=GetSeedLabelImage(obj)

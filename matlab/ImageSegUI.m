@@ -98,7 +98,7 @@ set(gcf,'WindowButtonUpFcn',{@mouse_up});
 % imgFolderName=uigetdir;
 % defaultimgFolder='/Users/guotaiwang/Documents/MATLAB/ImageSeg/image16_14/img';
 [startFileName,imgFolderName,FilterIndex] = uigetfile('*.png','select a file');
-slicSeg.OpenImage(imgFolderName);
+slicSeg.volumeImage = OpenPNGImage(imgFolderName);
 dirinfo=dir(fullfile(imgFolderName,'*.png'));
 sliceNumber=length(dirinfo);
 filenameLen=length(startFileName);
