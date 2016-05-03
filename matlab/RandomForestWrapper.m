@@ -10,8 +10,10 @@ classdef RandomForestWrapper < handle
             d.randomForest.Init(20,8,20);        
         end
         
-        function Train(d,currentTrainLabel,featureMatrix)
+        function Train(obj, currentTrainLabel, volumeSlice)
             % train the random forest using scribbles in on slice
+            
+            featureMatrix = SlicSegAlgorithm.GetSliceFeature(volumeSlice);
             if(isempty(currentTrainLabel) || isempty(find(currentTrainLabel>0)))
                 error('the training set is empty');
             end
@@ -28,23 +30,29 @@ classdef RandomForestWrapper < handle
             TrainingSet(length(forground)+1:length(forground)+length(background),:)=featureMatrix(background,:);
             TrainingLabel(length(forground)+1:length(forground)+length(background))=0;
             TrainingDataWithLabel=[TrainingSet,TrainingLabel];
-            d.randomForest.Train(TrainingDataWithLabel');
+            obj.randomForest.Train(TrainingDataWithLabel');
         end
         
-        function P=PredictUsingPrior(d,volSlice,priorSegSlice)
+        function [probabilitySlice, segmentationSlice] = PredictUsingPrior(obj, currentSeedLabel, volumeSlice, priorSegSlice, lambda, sigma)
             % get the probability in one slice
-            featureMatrix=SlicSegAlgorithm.GetSliceFeature(volSlice);
-            Prob=d.randomForest.Predict(featureMatrix');
-            P0=reshape(Prob,size(volSlice, 1),size(volSlice, 2));            
-            P=RandomForestWrapper.ProbabilityProcessUsingShapePrior(P0,priorSegSlice);
+            P0 = obj.Predict(volumeSlice);
+            probabilitySlice=RandomForestWrapper.ProbabilityProcessUsingShapePrior(P0,priorSegSlice);
+            segmentationSlice = SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel, volumeSlice, probabilitySlice, lambda, sigma);
         end
         
-        function P=PredictUsingConnectivity(d,currentSeedLabel,volSlice)
+        function [probabilitySlice, segmentationSlice] = PredictUsingConnectivity(obj, currentSeedLabel, volumeSlice, lambda, sigma)
             % get the probability in one slice
-            featureMatrix=SlicSegAlgorithm.GetSliceFeature(volSlice);
-            Prob=d.randomForest.Predict(featureMatrix');
-            P0=reshape(Prob,size(volSlice, 1),size(volSlice, 2));
-            P=RandomForestWrapper.ProbabilityProcessUsingConnectivity(currentSeedLabel,P0,volSlice);
+            P0 = obj.Predict(volumeSlice);
+            probabilitySlice = RandomForestWrapper.ProbabilityProcessUsingConnectivity(currentSeedLabel, P0, volumeSlice);
+            segmentationSlice = RandomForestWrapper.GetSingleSliceSegmentation(currentSeedLabel, volumeSlice, probabilitySlice, lambda, sigma);            
+        end
+    end
+    
+    methods (Access = private)
+        function P0 = Predict(obj, volumeSlice)
+            featureMatrix = SlicSegAlgorithm.GetSliceFeature(volumeSlice);
+            Prob = obj.randomForest.Predict(featureMatrix');
+            P0 = reshape(Prob, size(volumeSlice,1), size(volumeSlice,2));
         end
     end
     
@@ -114,6 +122,30 @@ classdef RandomForestWrapper < handle
             Lindex=find(L==0);
             P(Lindex)=P(Lindex)*0.4;
         end
+        
+        function featureMatrix = GetSliceFeature(I)
+            % get the feature matrix for given slice
+            dwtFeature = image2DWTfeature(I);
+            hogFeature = image2HOGFeature(I);
+            %             lbpFeature=image2LBPFeature(I);
+            intensityFeature = image2IntensityFeature(I);
+            % glmcfeatures=image2GLCMfeature(I);
+            % featureMatrix=[intensityFeature dwtFeature];% glmcfeatures];
+            featureMatrix = [intensityFeature hogFeature dwtFeature];
+        end
+        
+        function seg = GetSingleSliceSegmentation(currentSeedLabel, currentI, currentP, lambda, sigma)
+            % use max flow to get the segmentation in one slice
+            
+            currentSeed = currentSeedLabel;
+            [flow, currentSegLabel] = wgtmaxflowmex(currentI, currentSeed, currentP, lambda, sigma);
+            currentSegLabel = 1-currentSegLabel;
+            se = strel('disk', 2);
+            currentSegLabel = imclose(currentSegLabel, se);
+            currentSegLabel = imopen(currentSegLabel, se);
+            seg = currentSegLabel(:,:);
+        end
+        
     end
 end
 

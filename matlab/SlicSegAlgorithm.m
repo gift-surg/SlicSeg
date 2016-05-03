@@ -15,6 +15,8 @@ classdef SlicSegAlgorithm < handle
         sigma             % parameter for max-flow; controls the sensitivity of intensity difference
         innerDis          % radius of erosion when generating new training data
         outerDis          % radius of dilation when generating new training data
+        
+        Orientation
     end
     
     properties (Access = private)
@@ -45,16 +47,16 @@ classdef SlicSegAlgorithm < handle
             if isempty(obj.volumeImage)
                 imageSize=[0,0,0];
             else
-                imageSize=size(obj.volumeImage);
+                imageSize=obj.volumeImage.ImageSize;
             end
         end
         
         function set.volumeImage(obj,volumeImage)
-            obj.volumeImage=volumeImage;
+            obj.volumeImage=ImageWrapper(volumeImage);
             obj.ResetSegmentationResult();
         end
         
-        function SetMultipleProperties(obj,varargin)
+        function SetMultipleProperties(obj, varargin)
             argin=varargin;
             while(length(argin)>=2)
                 obj.(argin{1})=argin{2};
@@ -62,14 +64,14 @@ classdef SlicSegAlgorithm < handle
             end
         end
         
-        function val=Get2DSlice(obj,dataName, sliceIndex)
+        function slice = Get2DSlice(obj, dataName, sliceIndex)
             switch dataName
                 case 'volumeImage'
-                    val=obj.volumeImage(:,:,sliceIndex);
+                    slice = obj.volumeImage.getSlice(sliceIndex, obj.Orientation);
                 case 'probabilityImage'
-                    val=obj.probabilityImage(:,:,sliceIndex);
+                    slice = obj.probabilityImage.getSlice(sliceIndex, obj.Orientation);
                 case 'segImage'
-                    val=obj.segImage(:,:,sliceIndex);
+                    slice = obj.segImage.getSlice(sliceIndex, obj.Orientation);
                 otherwise
                     error([prop_name,'is not a valid image']);
             end
@@ -115,9 +117,12 @@ classdef SlicSegAlgorithm < handle
         end
         
         function ResetSegmentationResult(obj)
-            obj.seedImage=uint8(zeros(obj.imageSize(1),obj.imageSize(2)));
-            obj.segImage=uint8(zeros(obj.imageSize));
-            obj.probabilityImage=zeros(obj.imageSize);
+            sliceSize = obj.volumeImage.getSliceSlize(obj.Orientation);
+            obj.seedImage = zeros(sliceSize, 'uint8');
+            
+            fullImageSize = obj.volumeImage.getImageSize;
+            obj.segImage = ImageWrapper(zeros(fullImageSize, 'uint8'));
+            obj.probabilityImage = ImageWrapper(zeros(fullImageSize));
         end
         
         function SaveSegmentationResult(obj,segSaveFolder)
@@ -133,13 +138,15 @@ classdef SlicSegAlgorithm < handle
                 error('slice index should not be 0');
             end
             % segmentation in the start slice
-            SeedLabel=obj.GetSeedLabelImage();
-            currentSeedLabel  = SeedLabel;
-            currentTrainLabel = SeedLabel;
+            seedLabels = obj.GetSeedLabelImage();
+            currentSeedLabel  = seedLabels;
+            currentTrainLabel = seedLabels;
             currentSegIndex   = obj.startIndex;
-            obj.Train(currentTrainLabel,SlicSegAlgorithm.GetSliceFeature(obj.volumeImage(:,:,currentSegIndex)));
-            obj.probabilityImage(:,:,currentSegIndex)=obj.randomForest.PredictUsingConnectivity(currentSeedLabel,obj.volumeImage(:,:,currentSegIndex));
-            obj.segImage(:,:,currentSegIndex)=SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel,obj.volumeImage(:,:,currentSegIndex),obj.probabilityImage(:,:,currentSegIndex),obj.lambda,obj.sigma);
+            volumeSlice = obj.volumeImage.GetSlice(currentSegIndex,obj.Orientation);
+            obj.randomForest.Train(currentTrainLabel, volumeSlice);
+            [probabilitySlice, segmentationSlice] = obj.randomForest.PredictUsingConnectivity(currentSeedLabel, volumeSlice, obj.lambda, obj.sigma);
+            obj.segImage.replaceImageSlice(segmentationSlice, currentSegIndex, obj.Orientation);
+            obj.probabilityImage.replaceImageSlice(probabilitySlice, currentSegIndex, obj.Orientation);
         end
         
         function SegmentationPropagate(obj)
@@ -171,13 +178,19 @@ classdef SlicSegAlgorithm < handle
     end
     
     methods (Access=private)
-        function TrainAndPropagate(obj,train,currentSegIndex,priorSegIndex)
-            [currentSeedLabel,currentTrainLabel]=SlicSegAlgorithm.UpdateSeedLabel(obj.segImage(:,:,priorSegIndex),obj.innerDis,obj.outerDis);
+        function TrainAndPropagate(obj, train, currentSegIndex, priorSegIndex)
+            priorSegmentedSlice = obj.segImage(:,:,priorSegIndex);
+            [currentSeedLabel,currentTrainLabel] = SlicSegAlgorithm.UpdateSeedLabel(priorSegmentedSlice, obj.innerDis, obj.outerDis);
+            priorVolumeSlice = obj.volumeImage.GetSlice(priorSegIndex, obj.Orientation);
+            currentVolumeSlice = obj.volumeImage.GetSlice(currentSegIndex, obj.Orientation);
             if(train)
-                obj.randomForest.Train(currentTrainLabel,SlicSegAlgorithm.GetSliceFeature(obj.volumeImage(:,:,priorSegIndex)));
+                obj.randomForest.Train(currentTrainLabel, priorVolumeSlice);
             end
-            obj.probabilityImage(:,:,currentSegIndex)=obj.randomForest.PredictUsingPrior(obj.volumeImage(:,:,currentSegIndex),obj.segImage(:,:,priorSegIndex));
-            obj.segImage(:,:,currentSegIndex)=SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel,obj.volumeImage(:,:,currentSegIndex),obj.probabilityImage(:,:,currentSegIndex),obj.lambda,obj.sigma);
+            [probabilitySlice, segmentationSlice] = obj.randomForest.PredictUsingPrior(currentSeedLabel, currentVolumeSlice, priorSegmentedSlice, obj.lambda, obj.sigma);
+
+            obj.segImage.replaceImageSlice(segmentationSlice, currentSegIndex, obj.Orientation);
+            obj.probabilityImage.replaceImageSlice(probabilitySlice, currentSegIndex, obj.Orientation);            
+            
             notify(obj,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));            
         end
         
@@ -196,43 +209,20 @@ classdef SlicSegAlgorithm < handle
     end
     
     methods (Static, Access=private)
-        function featureMatrix=GetSliceFeature(I)
-            % get the feature matrix for given slice
-            dwtFeature=image2DWTfeature(I);
-            hogFeature=image2HOGFeature(I);
-            %             lbpFeature=image2LBPFeature(I);
-            intensityFeature=image2IntensityFeature(I);
-            % glmcfeatures=image2GLCMfeature(I);
-            % featureMatrix=[intensityFeature dwtFeature];% glmcfeatures];
-            featureMatrix=[intensityFeature hogFeature dwtFeature];
-        end
-        
-        function seg = GetSingleSliceSegmentation(currentSeedLabel,currentI,currentP,lambda,sigma)
-            % use max flow to get the segmentatio in one slice
-            currentSeed=currentSeedLabel;
-            
-            [flow, currentSegLabel]=wgtmaxflowmex(currentI,currentSeed,currentP,lambda,sigma);
-            currentSegLabel=1-currentSegLabel;
-            se= strel('disk',2);
-            currentSegLabel=imclose(currentSegLabel,se);
-            currentSegLabel=imopen(currentSegLabel,se);
-            seg=currentSegLabel(:,:);
-        end
-        
         function [currentSeedLabel,currentTrainLabel] = UpdateSeedLabel(currentSegImage,fgr,bgr)
             % generate new training data (for random forest) and new seeds
             % (hard constraint for max-flow) based on segmentation in last slice
             
             tempSegLabel=currentSegImage;
-            fgSe1= strel('disk',fgr);
+            fgSe1=strel('disk',fgr);
             fgMask=imerode(tempSegLabel,fgSe1);
             if(length(find(fgMask>0))<100)
                 fgMask=bwmorph(tempSegLabel,'skel',Inf);
             else
                 fgMask=bwmorph(fgMask,'skel',Inf);
             end
-            bgSe1= strel('disk',bgr);
-            bgSe2= strel('disk',bgr+1);
+            bgSe1=strel('disk',bgr);
+            bgSe2=strel('disk',bgr+1);
             fgDilate1=imdilate(tempSegLabel,bgSe1);
             fgDilate2=imdilate(tempSegLabel,bgSe2);
             bgMask=fgDilate2-fgDilate1;
