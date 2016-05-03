@@ -8,12 +8,12 @@ classdef SlicSegAlgorithm < handle
         
         orientation       % The index of the dimension perpendicular to the seedImage slice
         startIndex        % start slice index
-        sliceRange        % 2x1 matrix to store the minimum and maximum slice index
+        sliceRange        % 2x1 matrix to store the minimum and maximum slice index. Leave empty to use first and last slices
         
-        lambda            % parameter for max-flow; controls the weight of unary term and binary term
-        sigma             % parameter for max-flow; controls the sensitivity of intensity difference
-        innerDis          % radius of erosion when generating new training data
-        outerDis          % radius of dilation when generating new training data  
+        lambda   = 5.0    % parameter for max-flow; controls the weight of unary term and binary term
+        sigma    = 3.5    % parameter for max-flow; controls the sensitivity of intensity difference
+        innerDis = 5      % radius of erosion when generating new training data
+        outerDis = 6      % radius of dilation when generating new training data  
     end
     
     properties (SetAccess = private)
@@ -26,19 +26,12 @@ classdef SlicSegAlgorithm < handle
     end
     
     properties (Access = private)
-        randomForest      % Random Forest to learn and predict
+        randomForest = RandomForestWrapper()  % Random Forest to learn and predict
     end
     
     methods
-        function obj = SlicSegAlgorithm
+        function obj = SlicSegAlgorithm()
             obj.startIndex=0;
-            obj.sliceRange=[0,0];
-            obj.randomForest=RandomForestWrapper;
-            
-            obj.lambda=5.0;
-            obj.sigma=3.5;
-            obj.innerDis=5;
-            obj.outerDis=6;
         end
         
         function RunSegmention(obj)
@@ -50,7 +43,6 @@ classdef SlicSegAlgorithm < handle
         function StartSliceSegmentation(obj)
             % Creates a segmentation for the image slice specified in
             % startIndex. The seed image and start index must be set before calling this method.
-            
             if(obj.startIndex==0)
                 error('slice index should not be 0');
             end
@@ -67,11 +59,20 @@ classdef SlicSegAlgorithm < handle
         function SegmentationPropagate(obj)
             % Propagates the segmentation obtained from StartSliceSegmentation() to the remaining slices
             
-            if(obj.sliceRange(1)==0 || obj.sliceRange(2)==0)
-                error('index range should not be 0');
+            maxSliceIndex = obj.volumeImage.ImageSize(obj.orientation);
+            
+            % If no slice range has been specified we use the image limits
+            if isempty(obj.sliceRange)
+                currentSliceRange = [1, maxSliceIndex];
+            else
+                currentSliceRange = obj.sliceRange;
+                if (currentSliceRange(1) < 1) || (currentSliceRange(2) > maxSliceIndex)
+                    error('Slice index is out of range for the current image orientation');
+                end
             end
+            
             currentSegIndex=obj.startIndex;
-            for i=1:obj.startIndex-obj.sliceRange(1)
+            for i=1:obj.startIndex-currentSliceRange(1)
                 priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex-1;
                 obj.TrainAndPropagate(i>1,currentSegIndex,priorSegIndex);
@@ -80,7 +81,7 @@ classdef SlicSegAlgorithm < handle
             % propagate to following slices
             currentSegIndex=obj.startIndex;
             notify(obj,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
-            for i=obj.startIndex:obj.sliceRange(2)-1
+            for i=obj.startIndex:currentSliceRange(2)-1
                 priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex+1;
                 obj.TrainAndPropagate(i>obj.startIndex,currentSegIndex,priorSegIndex);
@@ -109,15 +110,6 @@ classdef SlicSegAlgorithm < handle
             obj.seedImage = ILabel;
             disp('seed image has been loaded successfully');
         end
-        
-        function SaveSegmentationResult(obj,segSaveFolder)
-            for index = 1 : obj.segImage.ImageSize(obj.orientation)
-                segFileName=fullfile(segSaveFolder,[num2str(index) '_seg.png']);
-                imwrite(obj.segImage(:,:,index)*255,segFileName);
-            end
-        end
-        
-        
 
         function ResetSegmentationResult(obj)
             % Deletes the current seed points and segmentation results
@@ -191,4 +183,3 @@ classdef SlicSegAlgorithm < handle
         end
     end
 end
-

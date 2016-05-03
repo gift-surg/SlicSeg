@@ -9,4 +9,4 @@ slicSeg.OpenScribbleImage('a23_05/22_seedsrgb.png');
 slicSeg.startIndex = 22;
 slicSeg.sliceRange = [5,38];
 slicSeg.RunSegmention();
-slicSeg.SaveSegmentationResult('a23_05/seg');
+SavePNGSegmentation(slicSeg.segImage, 'a23_05/seg');
