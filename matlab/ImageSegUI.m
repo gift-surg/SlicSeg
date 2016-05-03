@@ -104,7 +104,7 @@ sliceNumber=length(dirinfo);
 filenameLen=length(startFileName);
 currentViewImageIndex=str2num(startFileName(1:filenameLen-4));
 
-imgSize=slicSeg.imageSize;
+imgSize=slicSeg.volumeImage.ImageSize;
 ILabel=uint8(zeros([imgSize(1), imgSize(2)]));
 showResult();
 

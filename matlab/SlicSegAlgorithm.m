@@ -23,10 +23,6 @@ classdef SlicSegAlgorithm < handle
         randomForest      % Random Forest to learn and predict
     end
     
-    properties (Dependent)
-        imageSize        % 3x1 matrix, size of image (width, height, slices)
-    end
-    
     events
         SegmentationProgress
     end
@@ -43,25 +39,9 @@ classdef SlicSegAlgorithm < handle
             obj.outerDis=6;
         end
         
-        function imageSize = get.imageSize(obj)
-            if isempty(obj.volumeImage)
-                imageSize=[0,0,0];
-            else
-                imageSize=obj.volumeImage.ImageSize;
-            end
-        end
-        
-        function set.volumeImage(obj,volumeImage)
-            obj.volumeImage=ImageWrapper(volumeImage);
+        function set.volumeImage(obj, volumeImage)
+            obj.volumeImage = ImageWrapper(volumeImage);
             obj.ResetSegmentationResult();
-        end
-        
-        function SetMultipleProperties(obj, varargin)
-            argin=varargin;
-            while(length(argin)>=2)
-                obj.(argin{1})=argin{2};
-                argin=argin(3:end);
-            end
         end
         
         function slice = Get2DSlice(obj, dataName, sliceIndex)
@@ -126,7 +106,7 @@ classdef SlicSegAlgorithm < handle
         end
         
         function SaveSegmentationResult(obj,segSaveFolder)
-            for index=1:obj.imageSize(3)
+            for index = 1 : obj.segImage.ImageSize(obj.Orientation)
                 segFileName=fullfile(segSaveFolder,[num2str(index) '_seg.png']);
                 imwrite(obj.segImage(:,:,index)*255,segFileName);
             end
