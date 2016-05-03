@@ -1,7 +1,25 @@
 classdef SlicSegAlgorithm < CoreBaseClass
-    % Interactive segmentation algorithm of Slic-Seg
-    % The user selects one start slice and draws some scribbles in that
-    % slice to start segmentation.
+    % Slic-Seg: interactive segmentation algorithm
+    %
+    % An implementation of the Slic-Seg algorithm by G. Wang et al. 2015
+    %
+    % To run the algorithm:
+    %   - create a SlicSegAlgorithm object
+    %   - set the volumeImage property to a raw 3D dataset
+    %   - set the startIndex property to select a start slice
+    %   - set the seedImage property to user-generated scribbles for the start slice
+    %   - call StartSliceSegmentation() to segement the initial slice
+    %   - set the sliceRange property to the minimum and maximum slice numbers for the propagation
+    %   - call SegmentationPropagate() to propagate the start slice segmentation to neighbouring slices in the range set by sliceRange
+    %
+    %
+    % Author: Guotai Wang (guotai.wang.14@ucl.ac.uk)
+    % Copyright (c) 2015-2016 University College London, United Kingdom. All rights reserved.
+    % Distributed under the BSD-3 licence. Please see the file licence.txt 
+    %
+    % This software is not certified for clinical use.
+    %
+    
     properties (SetObservable)
         volumeImage       % 3D input volume image
         seedImage         % 2D seed image containing user-provided scribbles in the start slice
@@ -77,28 +95,39 @@ classdef SlicSegAlgorithm < CoreBaseClass
             
             % If no slice range has been specified we use the image limits
             if isempty(obj.sliceRange)
-                currentSliceRange = [1, maxSliceIndex];
+                minSlice = 1;
+                maxSlice = maxSliceIndex;
             else
-                currentSliceRange = obj.sliceRange;
+                minSlice = obj.sliceRange(1);
+                maxSlice = obj.sliceRange(2);
                 if (currentSliceRange(1) < 1) || (currentSliceRange(2) > maxSliceIndex)
                     error('Slice index is out of range for the current image orientation');
                 end
             end
             
             currentSegIndex = obj.startIndex;
-            for i=1:obj.startIndex-currentSliceRange(1)
-                priorSegIndex=currentSegIndex;
-                currentSegIndex=currentSegIndex-1;
-                obj.TrainAndPropagate(i>1,currentSegIndex,priorSegIndex);
+            
+            % First we propagate to the neighbours of the initial slice. We
+            % do this first because the algorithm is trained on this initial slice
+            if currentSegIndex > minSlice
+                obj.TrainAndPropagate(false, currentSegIndex - 1, currentSegIndex);                
+            end
+            if currentSegIndex < maxSlice
+                obj.TrainAndPropagate(false, currentSegIndex + 1, currentSegIndex);                
             end
             
-            % propagate to following slices
-            currentSegIndex=obj.startIndex;
-            notify(obj,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
-            for i=obj.startIndex:currentSliceRange(2)-1
+            % Propagate backwards from the backwards neighbour of the initial slice
+            priorSegIndex = obj.startIndex - 1;
+            for currentSegIndex = obj.startIndex-1 : -1 : minSlice
+                obj.TrainAndPropagate(true, currentSegIndex, priorSegIndex);
                 priorSegIndex=currentSegIndex;
-                currentSegIndex=currentSegIndex+1;
-                obj.TrainAndPropagate(i>obj.startIndex,currentSegIndex,priorSegIndex);
+            end
+            
+            % Propagate forwards from forwards neighbour of the initial slice
+            priorSegIndex = obj.startIndex + 1;
+            for currentSegIndex = obj.startIndex+1 : maxSlice
+                obj.TrainAndPropagate(true, currentSegIndex, priorSegIndex);
+                priorSegIndex=currentSegIndex;
             end
         end
 
@@ -139,7 +168,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
         function UpdateResults(obj, currentSegIndex, segmentationSlice, probabilitySlice)
             obj.segImage.replaceImageSlice(segmentationSlice, currentSegIndex, obj.orientation);
             obj.probabilityImage.replaceImageSlice(probabilitySlice, currentSegIndex, obj.orientation);
-            notify(obj,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));
+            notify(obj,'SegmentationProgress', SegmentationProgressEventDataClass(currentSegIndex));
         end
         
         function label = GetSeedLabelImage(obj)
