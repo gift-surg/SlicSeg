@@ -92,24 +92,6 @@ classdef SlicSegAlgorithm < handle
             obj.ResetSegmentationResult();
         end
 
-        function OpenScribbleImage(obj,labelFileName)
-            % read scribbles in the start slice (*.png rgb file)
-            rgbLabel=imread(labelFileName);
-            ISize=size(rgbLabel);
-            ILabel=uint8(zeros(ISize(1),ISize(2)));
-            for i=1:ISize(1)
-                for j=1:ISize(2)
-                    if(rgbLabel(i,j,1)==255 && rgbLabel(i,j,2)==0 && rgbLabel(i,j,3)==0)
-                        ILabel(i,j)=127;
-                    elseif(rgbLabel(i,j,1)==0 && rgbLabel(i,j,2)==0 && rgbLabel(i,j,3)==255)
-                        ILabel(i,j)=255;
-                    end
-                end
-            end
-            obj.seedImage = ILabel;
-            disp('seed image has been loaded successfully');
-        end
-
         function ResetSegmentationResult(obj)
             % Deletes the current segmentation results
             fullImageSize = obj.volumeImage.getImageSize;
@@ -127,7 +109,7 @@ classdef SlicSegAlgorithm < handle
     methods (Access=private)
         function TrainAndPropagate(obj, train, currentSegIndex, priorSegIndex)
             priorSegmentedSlice = obj.segImage.get2DSlice(priorSegIndex, obj.orientation);
-            [currentSeedLabel, currentTrainLabel] = SlicSegAlgorithm.UpdateSeedLabel(priorSegmentedSlice, obj.innerDis, obj.outerDis);
+            [currentSeedLabel, currentTrainLabel] = obj.UpdateSeedLabel(priorSegmentedSlice);
             if(train)
                 priorVolumeSlice = obj.volumeImage.Get2DSlice(priorSegIndex, obj.orientation);
                 obj.randomForest.Train(currentTrainLabel, priorVolumeSlice);
@@ -155,12 +137,13 @@ classdef SlicSegAlgorithm < handle
                 label(H-5,j)=255;
             end
         end
-    end
-    
-    methods (Static, Access=private)
-        function [currentSeedLabel, currentTrainLabel] = UpdateSeedLabel(currentSegImage, fgr, bgr)
+        
+        function [currentSeedLabel, currentTrainLabel] = UpdateSeedLabel(obj, currentSegImage)
             % generate new training data (for random forest) and new seeds
             % (hard constraint for max-flow) based on segmentation in last slice
+            
+            fgr = obj.innerDis;
+            bgr = obj.outerDis;
             
             tempSegLabel=currentSegImage;
             fgSe1=strel('disk',fgr);
