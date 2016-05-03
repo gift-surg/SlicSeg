@@ -13,8 +13,7 @@ classdef SlicSegAlgorithm < handle
         lambda            % parameter for max-flow; controls the weight of unary term and binary term
         sigma             % parameter for max-flow; controls the sensitivity of intensity difference
         innerDis          % radius of erosion when generating new training data
-        outerDis          % radius of dilation when generating new training data
-        
+        outerDis          % radius of dilation when generating new training data  
     end
     
     properties (SetAccess = private)
@@ -86,15 +85,6 @@ classdef SlicSegAlgorithm < handle
             
         end
         
-        function ResetSegmentationResult(obj)
-            sliceSize = obj.volumeImage.get2DSliceSlize(obj.orientation);
-            obj.seedImage = zeros(sliceSize, 'uint8');
-            
-            fullImageSize = obj.volumeImage.getImageSize;
-            obj.segImage = ImageWrapper(zeros(fullImageSize, 'uint8'));
-            obj.probabilityImage = ImageWrapper(zeros(fullImageSize));
-        end
-        
         function SaveSegmentationResult(obj,segSaveFolder)
             for index = 1 : obj.segImage.ImageSize(obj.orientation)
                 segFileName=fullfile(segSaveFolder,[num2str(index) '_seg.png']);
@@ -103,6 +93,7 @@ classdef SlicSegAlgorithm < handle
         end
         
         function StartSliceSegmentation(obj)
+            % Creates a segmentation from the slice specified in startIndex
             if(obj.startIndex==0)
                 error('slice index should not be 0');
             end
@@ -110,8 +101,8 @@ classdef SlicSegAlgorithm < handle
             seedLabels = obj.GetSeedLabelImage();
             currentSeedLabel  = seedLabels;
             currentTrainLabel = seedLabels;
-            currentSegIndex   = obj.startIndex;
-            volumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex,obj.orientation);
+            currentSegIndex = obj.startIndex;
+            volumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex, obj.orientation);
             obj.randomForest.Train(currentTrainLabel, volumeSlice);
             [probabilitySlice, segmentationSlice] = obj.randomForest.PredictUsingConnectivity(currentSeedLabel, volumeSlice, obj.lambda, obj.sigma);
             obj.segImage.replaceImageSlice(segmentationSlice, currentSegIndex, obj.orientation);
@@ -119,7 +110,7 @@ classdef SlicSegAlgorithm < handle
         end
         
         function SegmentationPropagate(obj)
-            % propagate to previous slices
+            % Propagates the segmentation obtained from StartSliceSegmentation() to the remaining slices
             if(obj.sliceRange(1)==0 || obj.sliceRange(2)==0)
                 error('index range should not be 0');
             end
@@ -144,17 +135,26 @@ classdef SlicSegAlgorithm < handle
             obj.StartSliceSegmentation();
             obj.SegmentationPropagate();
         end
+        
+        function ResetSegmentationResult(obj)
+            % Deletes the current seed points and segmentation results
+            sliceSize = obj.volumeImage.get2DSliceSlize(obj.orientation);
+            obj.seedImage = zeros(sliceSize, 'uint8');
+            fullImageSize = obj.volumeImage.getImageSize;
+            obj.segImage = ImageWrapper(zeros(fullImageSize, 'uint8'));
+            obj.probabilityImage = ImageWrapper(zeros(fullImageSize));
+        end        
     end
     
     methods (Access=private)
         function TrainAndPropagate(obj, train, currentSegIndex, priorSegIndex)
-            priorSegmentedSlice = obj.segImage(:,:,priorSegIndex);
-            [currentSeedLabel,currentTrainLabel] = SlicSegAlgorithm.UpdateSeedLabel(priorSegmentedSlice, obj.innerDis, obj.outerDis);
-            priorVolumeSlice = obj.volumeImage.Get2DSlice(priorSegIndex, obj.orientation);
-            currentVolumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex, obj.orientation);
+            priorSegmentedSlice = obj.segImage.get2DSlice(priorSegIndex, obj.orientation);
+            [currentSeedLabel, currentTrainLabel] = SlicSegAlgorithm.UpdateSeedLabel(priorSegmentedSlice, obj.innerDis, obj.outerDis);
             if(train)
+                priorVolumeSlice = obj.volumeImage.Get2DSlice(priorSegIndex, obj.orientation);
                 obj.randomForest.Train(currentTrainLabel, priorVolumeSlice);
             end
+            currentVolumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex, obj.orientation);
             [probabilitySlice, segmentationSlice] = obj.randomForest.PredictUsingPrior(currentSeedLabel, currentVolumeSlice, priorSegmentedSlice, obj.lambda, obj.sigma);
 
             obj.segImage.replaceImageSlice(segmentationSlice, currentSegIndex, obj.orientation);
@@ -204,9 +204,6 @@ classdef SlicSegAlgorithm < handle
             currentSeedLabel(fgMask>0)=127;
             currentSeedLabel(bgMask>0)=255;
         end
-        
-       
-        
     end
 end
 
