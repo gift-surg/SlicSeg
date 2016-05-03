@@ -3,28 +3,31 @@ classdef SlicSegAlgorithm < handle
     % The user selects one start slice and draws some scribbles in that
     % slice to start segmentation.
     properties
-        startIndex       % start slice index
-        sliceRange       % 2x1 matrix to store the minimum and maximum slice index
-        
-        seedImage         % 2D seed image containing user-provided scribbles in the start slice
         volumeImage       % 3D input volume image
-        segImage          % 3D image for segmentation result
-        probabilityImage  % 3D image of probability of being foreground
+        seedImage         % 2D seed image containing user-provided scribbles in the start slice
+        
+        orientation       % The index of the dimension perpendicular to the seedImage slice
+        startIndex        % start slice index
+        sliceRange        % 2x1 matrix to store the minimum and maximum slice index
         
         lambda            % parameter for max-flow; controls the weight of unary term and binary term
         sigma             % parameter for max-flow; controls the sensitivity of intensity difference
         innerDis          % radius of erosion when generating new training data
         outerDis          % radius of dilation when generating new training data
         
-        Orientation
     end
     
-    properties (Access = private)
-        randomForest      % Random Forest to learn and predict
+    properties (SetAccess = private)
+        segImage          % 3D image for segmentation result
+        probabilityImage  % 3D image of probability of being foreground
     end
     
     events
         SegmentationProgress
+    end
+    
+    properties (Access = private)
+        randomForest      % Random Forest to learn and predict
     end
     
     methods
@@ -84,7 +87,7 @@ classdef SlicSegAlgorithm < handle
         end
         
         function ResetSegmentationResult(obj)
-            sliceSize = obj.volumeImage.get2DSliceSlize(obj.Orientation);
+            sliceSize = obj.volumeImage.get2DSliceSlize(obj.orientation);
             obj.seedImage = zeros(sliceSize, 'uint8');
             
             fullImageSize = obj.volumeImage.getImageSize;
@@ -93,11 +96,10 @@ classdef SlicSegAlgorithm < handle
         end
         
         function SaveSegmentationResult(obj,segSaveFolder)
-            for index = 1 : obj.segImage.ImageSize(obj.Orientation)
+            for index = 1 : obj.segImage.ImageSize(obj.orientation)
                 segFileName=fullfile(segSaveFolder,[num2str(index) '_seg.png']);
                 imwrite(obj.segImage(:,:,index)*255,segFileName);
             end
-            
         end
         
         function StartSliceSegmentation(obj)
@@ -109,11 +111,11 @@ classdef SlicSegAlgorithm < handle
             currentSeedLabel  = seedLabels;
             currentTrainLabel = seedLabels;
             currentSegIndex   = obj.startIndex;
-            volumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex,obj.Orientation);
+            volumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex,obj.orientation);
             obj.randomForest.Train(currentTrainLabel, volumeSlice);
             [probabilitySlice, segmentationSlice] = obj.randomForest.PredictUsingConnectivity(currentSeedLabel, volumeSlice, obj.lambda, obj.sigma);
-            obj.segImage.replaceImageSlice(segmentationSlice, currentSegIndex, obj.Orientation);
-            obj.probabilityImage.replaceImageSlice(probabilitySlice, currentSegIndex, obj.Orientation);
+            obj.segImage.replaceImageSlice(segmentationSlice, currentSegIndex, obj.orientation);
+            obj.probabilityImage.replaceImageSlice(probabilitySlice, currentSegIndex, obj.orientation);
         end
         
         function SegmentationPropagate(obj)
@@ -148,15 +150,15 @@ classdef SlicSegAlgorithm < handle
         function TrainAndPropagate(obj, train, currentSegIndex, priorSegIndex)
             priorSegmentedSlice = obj.segImage(:,:,priorSegIndex);
             [currentSeedLabel,currentTrainLabel] = SlicSegAlgorithm.UpdateSeedLabel(priorSegmentedSlice, obj.innerDis, obj.outerDis);
-            priorVolumeSlice = obj.volumeImage.Get2DSlice(priorSegIndex, obj.Orientation);
-            currentVolumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex, obj.Orientation);
+            priorVolumeSlice = obj.volumeImage.Get2DSlice(priorSegIndex, obj.orientation);
+            currentVolumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex, obj.orientation);
             if(train)
                 obj.randomForest.Train(currentTrainLabel, priorVolumeSlice);
             end
             [probabilitySlice, segmentationSlice] = obj.randomForest.PredictUsingPrior(currentSeedLabel, currentVolumeSlice, priorSegmentedSlice, obj.lambda, obj.sigma);
 
-            obj.segImage.replaceImageSlice(segmentationSlice, currentSegIndex, obj.Orientation);
-            obj.probabilityImage.replaceImageSlice(probabilitySlice, currentSegIndex, obj.Orientation);            
+            obj.segImage.replaceImageSlice(segmentationSlice, currentSegIndex, obj.orientation);
+            obj.probabilityImage.replaceImageSlice(probabilitySlice, currentSegIndex, obj.orientation);            
             
             notify(obj,'SegmentationProgress',SegmentationProgressEventDataClass(currentSegIndex));            
         end
