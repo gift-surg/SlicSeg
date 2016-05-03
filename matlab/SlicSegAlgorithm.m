@@ -44,19 +44,6 @@ classdef SlicSegAlgorithm < handle
             obj.ResetSegmentationResult();
         end
         
-        function slice = Get2DSlice(obj, dataName, sliceIndex)
-            switch dataName
-                case 'volumeImage'
-                    slice = obj.volumeImage.getSlice(sliceIndex, obj.Orientation);
-                case 'probabilityImage'
-                    slice = obj.probabilityImage.getSlice(sliceIndex, obj.Orientation);
-                case 'segImage'
-                    slice = obj.segImage.getSlice(sliceIndex, obj.Orientation);
-                otherwise
-                    error([prop_name,'is not a valid image']);
-            end
-        end
-        
         function OpenImage(obj,imgFolderName)
             % read volume image from a folder, which contains a chain of
             % *.png images indexed from 1 to the number of slices.
@@ -97,7 +84,7 @@ classdef SlicSegAlgorithm < handle
         end
         
         function ResetSegmentationResult(obj)
-            sliceSize = obj.volumeImage.getSliceSlize(obj.Orientation);
+            sliceSize = obj.volumeImage.get2DSliceSlize(obj.Orientation);
             obj.seedImage = zeros(sliceSize, 'uint8');
             
             fullImageSize = obj.volumeImage.getImageSize;
@@ -122,7 +109,7 @@ classdef SlicSegAlgorithm < handle
             currentSeedLabel  = seedLabels;
             currentTrainLabel = seedLabels;
             currentSegIndex   = obj.startIndex;
-            volumeSlice = obj.volumeImage.GetSlice(currentSegIndex,obj.Orientation);
+            volumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex,obj.Orientation);
             obj.randomForest.Train(currentTrainLabel, volumeSlice);
             [probabilitySlice, segmentationSlice] = obj.randomForest.PredictUsingConnectivity(currentSeedLabel, volumeSlice, obj.lambda, obj.sigma);
             obj.segImage.replaceImageSlice(segmentationSlice, currentSegIndex, obj.Orientation);
@@ -161,8 +148,8 @@ classdef SlicSegAlgorithm < handle
         function TrainAndPropagate(obj, train, currentSegIndex, priorSegIndex)
             priorSegmentedSlice = obj.segImage(:,:,priorSegIndex);
             [currentSeedLabel,currentTrainLabel] = SlicSegAlgorithm.UpdateSeedLabel(priorSegmentedSlice, obj.innerDis, obj.outerDis);
-            priorVolumeSlice = obj.volumeImage.GetSlice(priorSegIndex, obj.Orientation);
-            currentVolumeSlice = obj.volumeImage.GetSlice(currentSegIndex, obj.Orientation);
+            priorVolumeSlice = obj.volumeImage.Get2DSlice(priorSegIndex, obj.Orientation);
+            currentVolumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex, obj.Orientation);
             if(train)
                 obj.randomForest.Train(currentTrainLabel, priorVolumeSlice);
             end

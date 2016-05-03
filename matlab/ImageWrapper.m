@@ -23,7 +23,7 @@ classdef ImageWrapper < handle
             end
         end        
         
-        function slice = getSlice(obj, sliceNumber, dimension)
+        function slice = get2DSlice(obj, sliceNumber, dimension)
             % Returns a 2D slice from the image in the specified direction
             
            switch dimension
@@ -38,7 +38,7 @@ classdef ImageWrapper < handle
            end
         end
         
-        function sliceSize = getSliceSize(obj, dimension)
+        function sliceSize = get2DSliceSize(obj, dimension)
             % Returns a 2D slice from the image in the specified direction
             
             imageSize = obj.getImageSize;
