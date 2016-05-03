@@ -5,9 +5,9 @@ classdef RandomForestWrapper < handle
     end
     
     methods
-        function d = RandomForestWrapper()
-            d.randomForest=Forest_interface();
-            d.randomForest.Init(20,8,20);        
+        function obj = RandomForestWrapper()
+            obj.randomForest=Forest_interface();
+            obj.randomForest.Init(20,8,20);        
         end
         
         function Train(obj, currentTrainLabel, volumeSlice)

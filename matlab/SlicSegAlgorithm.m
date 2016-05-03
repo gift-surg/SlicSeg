@@ -1,8 +1,8 @@
-classdef SlicSegAlgorithm < handle
+classdef SlicSegAlgorithm < CoreBaseClass
     % Interactive segmentation algorithm of Slic-Seg
     % The user selects one start slice and draws some scribbles in that
     % slice to start segmentation.
-    properties
+    properties (SetObservable)
         volumeImage       % 3D input volume image
         seedImage         % 2D seed image containing user-provided scribbles in the start slice
         
@@ -30,6 +30,21 @@ classdef SlicSegAlgorithm < handle
     end
     
     methods
+        function obj = SlicSegAlgorithm()
+            % When these properties are changed, we invalidate the seed image and the segmentation results
+            obj.AddPostSetListener(obj, 'volumeImage', @obj.ResetSeedAndSegmentationResultCallback);
+            obj.AddPostSetListener(obj, 'orientation', @obj.ResetSeedAndSegmentationResultCallback);
+
+            % When these properties are changed, we invalidate just the segmentation results
+            obj.AddPostSetListener(obj, 'seedImage', @obj.ResetSegmentationResultCallback);
+            obj.AddPostSetListener(obj, 'startIndex', @obj.ResetSegmentationResultCallback);
+            obj.AddPostSetListener(obj, 'sliceRange', @obj.ResetSegmentationResultCallback);
+            obj.AddPostSetListener(obj, 'lambda', @obj.ResetSegmentationResultCallback);
+            obj.AddPostSetListener(obj, 'sigma', @obj.ResetSegmentationResultCallback);
+            obj.AddPostSetListener(obj, 'innerDis', @obj.ResetSegmentationResultCallback);
+            obj.AddPostSetListener(obj, 'outerDis', @obj.ResetSegmentationResultCallback);
+        end
+        
         function RunSegmention(obj)
             % Runs the full segmentation. The seed image and start index must be set before calling this method.
 
@@ -70,7 +85,7 @@ classdef SlicSegAlgorithm < handle
                 end
             end
             
-            currentSegIndex=obj.startIndex;
+            currentSegIndex = obj.startIndex;
             for i=1:obj.startIndex-currentSliceRange(1)
                 priorSegIndex=currentSegIndex;
                 currentSegIndex=currentSegIndex-1;
@@ -87,11 +102,6 @@ classdef SlicSegAlgorithm < handle
             end
         end
 
-        function set.volumeImage(obj, volumeImage)
-            obj.volumeImage = ImageWrapper(volumeImage);
-            obj.ResetSegmentationResult();
-        end
-
         function ResetSegmentationResult(obj)
             % Deletes the current segmentation results
             fullImageSize = obj.volumeImage.getImageSize;
@@ -103,7 +113,14 @@ classdef SlicSegAlgorithm < handle
             % Deletes the current seed points
             sliceSize = obj.volumeImage.get2DSliceSlize(obj.orientation);
             obj.seedImage = zeros(sliceSize, 'uint8');
-        end        
+        end
+        
+        function set.volumeImage(obj, volumeImage)
+            % Custom setter method to ensure existing results are invalidated by a change of image
+            obj.volumeImage = ImageWrapper(volumeImage);
+            obj.ResetSegmentationResult();
+            obj.ResetSeedPoints();
+        end
     end
     
     methods (Access=private)
@@ -166,6 +183,15 @@ classdef SlicSegAlgorithm < handle
             currentSeedLabel=uint8(zeros(size(tempSegLabel)));
             currentSeedLabel(fgMask>0)=127;
             currentSeedLabel(bgMask>0)=255;
+        end
+        
+        function ResetSeedAndSegmentationResultCallback(obj, ~, ~, ~)
+            obj.ResetSeedPoints();
+            obj.ResetSegmentationResult();
+        end
+        
+        function ResetSegmentationResultCallback(obj, ~, ~, ~)
+            obj.ResetSegmentationResult();
         end
     end
 end
