@@ -21,38 +21,34 @@ classdef ForestWrapper < handle
             this.forestHandle = Forest_interface_mex('new', varargin{:});
         end
         
-        function delete(this)
+        function delete(obj)
             % Destructor - destroy the C++ object instance when the
             % Matlab object is destroyed
-            Forest_interface_mex('delete', this.forest);
+            Forest_interface_mex('delete', obj.forestHandle);
         end
 
-        function varargout = Init(this, varargin)
+        function varargout = Init(obj, varargin)
             % Initialise the random forest
-            this.treeNum=varargin{1};
-            [varargout{1:nargout}] = Forest_interface_mex('Init', this.forest, varargin{:});
+            obj.treeNum=varargin{1};
+            [varargout{1:nargout}] = Forest_interface_mex('Init', obj.forest, varargin{:});
         end
 
-        function varargout = Train(this, varargin)
+        function varargout = Train(obj, varargin)
             % Train the random forest
-            [varargout{1:nargout}] = Forest_interface_mex('Train', this.forestHandle, varargin{:});
+            [varargout{1:nargout}] = Forest_interface_mex('Train', obj.forestHandle, varargin{:});
         end
 
-        function varargout = Predict(this, varargin)
+        function varargout = Predict(obj, varargin)
             % Predict values from the random forest
-            [varargout{1:nargout}] = Forest_interface_mex('Predict', this.forestHandle, varargin{:});
+            [varargout{1:nargout}] = Forest_interface_mex('Predict', obj.forestHandle, varargin{:});
         end
         
-        function varargout = GPUPredict(this,varargin)
+        function varargout = GPUPredict(obj, varargin)
             testData=varargin{1};
             [Nf,Nte]=size(testData);
 
-            [left,right,splitFeature,splitValue]=this.ConvertTreeToList();
+            [left,right,splitFeature,splitValue]=obj.ConvertTreeToList();
             maxnode=size(left,1);
-%             right=this.GetRightList();
-%             maxnode=this.GetMaxNodeOnTree();
-%             splitFeature=this.GetSplitFeatureList();
-%             splitValue=this.GetSplitValueList();
             gpuLeft=gpuArray(left);
             gpuRight=gpuArray(right);
             gpuSplitF=gpuArray(splitFeature);
@@ -63,27 +59,13 @@ classdef ForestWrapper < handle
             k = parallel.gpu.CUDAKernel('ForestPredict.ptx','ForestPredict.cu','ForestPredict');
             k.GridSize=[ceil(Nte/32),1,1];
             k.ThreadBlockSize = [32,1,1];
-            gpuPredict=feval(k,gpuLeft,gpuRight,gpuSplitF,gpuSplitV,this.treeNum,maxnode,...
+            gpuPredict=feval(k,gpuLeft,gpuRight,gpuSplitF,gpuSplitV,obj.treeNum,maxnode,...
                 gpuTestData,Nte,Nf,gpuPredict);
             [varargout{1:nargout}]=gather(gpuPredict);
         end
-%         function varargout = GetMaxNodeOnTree(this)
-%             [varargout{1:nargout}] = Forest_interface_mex('GetMaxNodeOnTree', this.forestHandle);
-%         end
-%         function varargout = GetLeftList(this)
-%             [varargout{1:nargout}] = Forest_interface_mex('GetLeftList', this.forestHandle);
-%         end
-%         function varargout = GetRightList(this)
-%             [varargout{1:nargout}] = Forest_interface_mex('GetRightList', this.forestHandle);
-%         end
-%         function varargout = GetSplitFeatureList(this)
-%             [varargout{1:nargout}] = Forest_interface_mex('GetSplitFeatureList', this.forestHandle);
-%         end
-%         function varargout = GetSplitValueList(this)
-%             [varargout{1:nargout}] = Forest_interface_mex('GetSplitValueList', this.forestHandle);
-%         end
-        function varargout = ConvertTreeToList(this)
-            [varargout{1:nargout}] = Forest_interface_mex('ConvertTreeToList', this.forestHandle);
+
+        function varargout = ConvertTreeToList(obj)
+            [varargout{1:nargout}] = Forest_interface_mex('ConvertTreeToList', obj.forestHandle);
         end
     end
 end
