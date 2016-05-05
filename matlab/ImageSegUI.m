@@ -62,11 +62,9 @@ guidata(hObject, handles);
 % UIWAIT makes ImageSegUI wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 global slicSeg;
-global mouse_state; 
-global for_back_ground;
-mouse_state=0;
-for_back_ground=0;
+global slicSegGuiController
 slicSeg=SlicSegAlgorithm();
+slicSegGuiController = SlicSegGuiController();
 
 
 % --- Outputs from this function are returned to the command line.
@@ -86,15 +84,16 @@ function pushbutton_loadImage_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global currentViewImageIndex;
-global ILabel;
 global slicSeg;
 global glbHandles;
+global slicSegGuiController
+
 glbHandles=handles;
 reset(handles.axes_image);
 cla(handles.axes_image);
-set(gcf,'WindowButtonDownFcn',{@mouse_down});
-set(gcf,'WindowButtonMotionFcn',{@mouse_move});
-set(gcf,'WindowButtonUpFcn',{@mouse_up});
+set(gcf,'WindowButtonDownFcn',{@slicSegGuiController.mouse_down});
+set(gcf,'WindowButtonMotionFcn',{@slicSegGuiController.mouse_move});
+set(gcf,'WindowButtonUpFcn',{@slicSegGuiController.mouse_up});
 % imgFolderName=uigetdir;
 % defaultimgFolder='/Users/guotaiwang/Documents/MATLAB/ImageSeg/image16_14/img';
 [startFileName,imgFolderName,FilterIndex] = uigetfile('*.png','select a file');
@@ -104,8 +103,8 @@ sliceNumber=length(dirinfo);
 filenameLen=length(startFileName);
 currentViewImageIndex=str2num(startFileName(1:filenameLen-4));
 
-imgSize=slicSeg.volumeImage.ImageSize;
-ILabel=uint8(zeros([imgSize(1), imgSize(2)]));
+imgSize=slicSeg.volumeImage.getImageSize;
+slicSegGuiController.ResetLabelImage(imgSize);
 showResult();
 
 set(handles.text_currentslice,'String',['current slice number: ' num2str(currentViewImageIndex)]);
@@ -120,16 +119,16 @@ function pushbutton_solectForground_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_solectForground (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global for_back_ground;
-for_back_ground=1;
+global slicSegGuiController
+slicSegGuiController.SelectForeground();
 
 % --- Executes on button press in pushbutton_selectBackGound.
 function pushbutton_selectBackGound_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_selectBackGound (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global for_back_ground;
-for_back_ground=2;
+global slicSegGuiController
+slicSegGuiController.SelectBackground();
 
 % --- Executes on button press in pushbutton_segment.
 function pushbutton_segment_Callback(hObject, eventdata, handles)
@@ -139,9 +138,9 @@ function pushbutton_segment_Callback(hObject, eventdata, handles)
 % segment_callback_Treebag(handles);
 global slicSeg;
 global currentViewImageIndex;
-global ILabel;
+global slicSegGuiController
 slicSeg.startIndex = currentViewImageIndex;
-slicSeg.seedImage = ILabel;
+slicSeg.seedImage = slicSegGuiController.ILabel;
 slicSeg.StartSliceSegmentation();
 showResult();
 
@@ -179,8 +178,10 @@ function pushbutton_reload_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global slicSeg;
-global ILabel;
-ILabel=uint8(zeros(size(ILabel)));
+global slicSegGuiController
+
+slicSegGuiController.ResetLabelImage(size(slicSegGuiController.ILabel));
+
 slicSeg.ResetSegmentationResult();
 slicSeg.ResetSeedPoints();
 showResult();
@@ -188,7 +189,7 @@ showResult();
 % --- Executes on slider movement.
 function slider_imageIndex_Callback(hObject, eventdata, handles)
 % hObject    handle to slider_imageIndex (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
+% eventdata  reserved - to be defixned in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hints: get(hObject,'Value') returns position of slider
