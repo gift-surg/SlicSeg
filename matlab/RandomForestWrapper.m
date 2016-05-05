@@ -17,18 +17,18 @@ classdef RandomForestWrapper < handle
             if(isempty(currentTrainLabel) || isempty(find(currentTrainLabel>0)))
                 error('the training set is empty');
             end
-            forground=find(currentTrainLabel==127);
+            foreground=find(currentTrainLabel==127);
             background=find(currentTrainLabel==255);
-            totalseeds=length(forground)+length(background);
+            totalseeds=length(foreground)+length(background);
             if(totalseeds==0)
                 error('the training set is empty');
             end
             TrainingSet=zeros(totalseeds,size(featureMatrix,2));
             TrainingLabel=zeros(totalseeds,1);
-            TrainingSet(1:length(forground),:)=featureMatrix(forground,:);
-            TrainingLabel(1:length(forground))=1;
-            TrainingSet(length(forground)+1:length(forground)+length(background),:)=featureMatrix(background,:);
-            TrainingLabel(length(forground)+1:length(forground)+length(background))=0;
+            TrainingSet(1:length(foreground),:)=featureMatrix(foreground,:);
+            TrainingLabel(1:length(foreground))=1;
+            TrainingSet(length(foreground)+1:length(foreground)+length(background),:)=featureMatrix(background,:);
+            TrainingLabel(length(foreground)+1:length(foreground)+length(background))=0;
             TrainingDataWithLabel=[TrainingSet,TrainingLabel];
             obj.randomForest.Train(TrainingDataWithLabel');
         end
