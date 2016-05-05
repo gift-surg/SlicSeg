@@ -45,7 +45,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
     end
     
     properties (Access = private)
-        randomForest = RandomForestWrapper()  % Random Forest to learn and predict
+        randomForest       % Random Forest to learn and predict
     end
     
     methods
@@ -85,8 +85,8 @@ classdef SlicSegAlgorithm < CoreBaseClass
             seedLabels = obj.GetSeedLabelImage();
             currentSegIndex = obj.startIndex;
             volumeSlice = obj.volumeImage.get2DSlice(currentSegIndex, obj.orientation);
-            obj.randomForest.Train(seedLabels, volumeSlice);
-            [probabilitySlice, segmentationSlice] = obj.randomForest.PredictUsingConnectivity(seedLabels, volumeSlice, obj.lambda, obj.sigma);
+            obj.getRandomForest.Train(seedLabels, volumeSlice);
+            [probabilitySlice, segmentationSlice] = obj.getRandomForest.PredictUsingConnectivity(seedLabels, volumeSlice, obj.lambda, obj.sigma);
             obj.UpdateResults(currentSegIndex, segmentationSlice, probabilitySlice);
         end
         
@@ -155,15 +155,22 @@ classdef SlicSegAlgorithm < CoreBaseClass
     end
     
     methods (Access=private)
+        function randomForest = getRandomForest(obj)
+            if isempty(obj.randomForest)
+                obj.randomForest = RandomForestWrapper();
+            end
+            randomForest = obj.randomForest;
+        end
+        
         function TrainAndPropagate(obj, train, currentSegIndex, priorSegIndex)
             priorSegmentedSlice = obj.segImage.get2DSlice(priorSegIndex, obj.orientation);
             [currentSeedLabel, currentTrainLabel] = obj.UpdateSeedLabel(priorSegmentedSlice);
             if(train)
                 priorVolumeSlice = obj.volumeImage.Get2DSlice(priorSegIndex, obj.orientation);
-                obj.randomForest.Train(currentTrainLabel, priorVolumeSlice);
+                obj.getRandomForest.Train(currentTrainLabel, priorVolumeSlice);
             end
             currentVolumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex, obj.orientation);
-            [probabilitySlice, segmentationSlice] = obj.randomForest.PredictUsingPrior(currentSeedLabel, currentVolumeSlice, priorSegmentedSlice, obj.lambda, obj.sigma);
+            [probabilitySlice, segmentationSlice] = obj.getRandomForest.PredictUsingPrior(currentSeedLabel, currentVolumeSlice, priorSegmentedSlice, obj.lambda, obj.sigma);
             obj.UpdateResults(currentSegIndex, segmentationSlice, probabilitySlice);
         end
         

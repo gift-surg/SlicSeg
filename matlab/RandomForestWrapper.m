@@ -50,7 +50,7 @@ classdef RandomForestWrapper < handle
     
     methods (Access = private)
         function P0 = Predict(obj, volumeSlice)
-            featureMatrix = SlicSegAlgorithm.GetSliceFeature(volumeSlice);
+            featureMatrix = RandomForestWrapper.GetSliceFeature(volumeSlice);
             Prob = obj.randomForest.Predict(featureMatrix');
             P0 = reshape(Prob, size(volumeSlice,1), size(volumeSlice,2));
         end

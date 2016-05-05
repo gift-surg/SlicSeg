@@ -4,11 +4,8 @@ classdef ImageSegUIController < CoreBaseClass
         currentViewImageIndex
     end
     
-    properties (SetAccess = private)
-        ILabel
-    end
-    
     properties (Access = private)
+        ILabel
         imageAxes
         slicSeg
         mouseIsDown = false
@@ -19,7 +16,7 @@ classdef ImageSegUIController < CoreBaseClass
         function obj = ImageSegUIController(currentFigure, imageAxes)
             obj.imageAxes = imageAxes;
             obj.slicSeg = SlicSegAlgorithm();
-            set(currentFigure, 'WindowButtonDownFcn', {@obj.mouseDown});
+            set(currentFigure, 'WindowButtonDownFcn', @obj.mouseDown);
             set(currentFigure, 'WindowButtonMotionFcn', {@obj.mouseMove});
             set(currentFigure, 'WindowButtonUpFcn', {@obj.mouseUp});
             obj.AddEventListener(obj.slicSeg, 'SegmentationProgress', @obj.UpdateSegmentationProgress);

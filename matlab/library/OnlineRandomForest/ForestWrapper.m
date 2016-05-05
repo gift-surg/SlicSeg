@@ -15,9 +15,9 @@ classdef ForestWrapper < handle
     end
     
     methods
-        function this = ForestWrapper(varargin)
+        function obj = ForestWrapper(varargin)
             % Create a new instance of the C++ class
-            this.forestHandle = Forest_interface_mex('new', varargin{:});
+            obj.forestHandle = Forest_interface_mex('new', varargin{:});
         end
         
         function delete(obj)

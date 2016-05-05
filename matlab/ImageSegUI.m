@@ -65,14 +65,13 @@ global imageSegUIController
 global glbHandles;
 
 % Create a new UI controller which will manage the GUI state and mouse interaction
-imageSegUIController = ImageSegUIController(gcf, handles.axes_image);
+imageSegUIController = ImageSegUIController(handles.figure1, handles.axes_image);
 
 % Cache the handles so we can update the controls when the slice number
 % changes
 glbHandles = handles;
 
 % Listen for slice number change callbacks
-% addlistener(imageSegUIController, 'SliceNumberChanged', @UpdateSliceNumber);
 addlistener(imageSegUIController, 'currentViewImageIndex', 'PostSet', @UpdateSliceNumber);
 
 
@@ -106,7 +105,7 @@ set(handles.slider_imageIndex,'SliderStep',[1/(maxSliceNumber-1) 1]);
 
 
 % --- Executes on button press in pushbutton_solectForground.
-function pushbutton_solectForground_Callback(hObject, eventdata, handles)
+function pushbutton_selectForground_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_solectForground (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -115,7 +114,7 @@ imageSegUIController.selectForeground();
 
 
 % --- Executes on button press in pushbutton_selectBackGound.
-function pushbutton_selectBackGound_Callback(hObject, eventdata, handles)
+function pushbutton_selectBackground_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_selectBackGound (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -133,7 +132,7 @@ imageSegUIController.segment();
 
 
 % --- Executes on button press in pushbutton_Propagate.
-function pushbutton_Propagate_Callback(hObject, eventdata, handles)
+function pushbutton_propagate_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_Propagate (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
