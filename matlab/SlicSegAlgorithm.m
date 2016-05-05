@@ -1,7 +1,8 @@
 classdef SlicSegAlgorithm < CoreBaseClass
-    % Slic-Seg: interactive segmentation algorithm
+    % SlicSegAlgorithm: implementation of the Slic-Seg interactive segmentation algorithm
     %
-    % An implementation of the Slic-Seg algorithm by G. Wang et al. 2015
+    % For a description of Slic-Seg see Wang et al 2006: Slic-Seg: A Minimally Interactive Segmentation
+    % of the Placenta from Sparse and Motion-Corrupted Fetal MRI in Multiple Views
     %
     % To run the algorithm:
     %   - create a SlicSegAlgorithm object
@@ -13,7 +14,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
     %   - call SegmentationPropagate() to propagate the start slice segmentation to neighbouring slices in the range set by sliceRange
     %
     %
-    % Author: Guotai Wang (guotai.wang.14@ucl.ac.uk)
+    % Author: Guotai Wang
     % Copyright (c) 2015-2016 University College London, United Kingdom. All rights reserved.
     % Distributed under the BSD-3 licence. Please see the file licence.txt 
     %

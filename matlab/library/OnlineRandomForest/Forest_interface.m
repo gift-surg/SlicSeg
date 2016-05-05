@@ -1,30 +1,46 @@
-%CLASS_INTERFACE Example MATLAB class wrapper to an underlying C++ class
 classdef Forest_interface < handle
+    % Forest_interface A wrapper around a C++ implementation of a random forest
+    %
+    % For more information see Slic-Seg (Wang et al, 2016)
+    %
+    % Author: Guotai Wang
+    % Copyright (c) 2015-2016 University College London, United Kingdom. All rights reserved.
+    % Distributed under the BSD-3 licence. Please see the file licence.txt 
+    %
+    % This software is not certified for clinical use.
+    %
+    
     properties (SetAccess = private, Hidden = true)
-        objectHandle; % Handle to the underlying C++ class instance
-        treeNum;% treeNumber
+        forestHandle  % Handle to the underlying C++ class instance
+        treeNum       % treeNumber
     end
+    
     methods
-        %% Constructor - Create a new C++ class instance 
         function this = Forest_interface(varargin)
-            this.objectHandle =Forest_interface_mex('new', varargin{:});
+            % Create a new instance of the C++ class
+            this.forestHandle = Forest_interface_mex('new', varargin{:});
         end
         
-        %% Destructor - Destroy the C++ class instance
         function delete(this)
-            Forest_interface_mex('delete', this.objectHandle);
+            % Destructor - destroy the C++ object instance when the
+            % Matlab object is destroyed
+            Forest_interface_mex('delete', this.forest);
         end
+
         function varargout = Init(this, varargin)
+            % Initialise the random forest
             this.treeNum=varargin{1};
-            [varargout{1:nargout}] = Forest_interface_mex('Init', this.objectHandle, varargin{:});
+            [varargout{1:nargout}] = Forest_interface_mex('Init', this.forest, varargin{:});
         end
-        %% Train - an example class method call
+
         function varargout = Train(this, varargin)
-            [varargout{1:nargout}] = Forest_interface_mex('Train', this.objectHandle, varargin{:});
+            % Train the random forest
+            [varargout{1:nargout}] = Forest_interface_mex('Train', this.forestHandle, varargin{:});
         end
-        %% Test - another example class method call
+
         function varargout = Predict(this, varargin)
-            [varargout{1:nargout}] = Forest_interface_mex('Predict', this.objectHandle, varargin{:});
+            % Predict values from the random forest
+            [varargout{1:nargout}] = Forest_interface_mex('Predict', this.forestHandle, varargin{:});
         end
         
         function varargout = GPUPredict(this,varargin)
@@ -52,22 +68,22 @@ classdef Forest_interface < handle
             [varargout{1:nargout}]=gather(gpuPredict);
         end
 %         function varargout = GetMaxNodeOnTree(this)
-%             [varargout{1:nargout}] = Forest_interface_mex('GetMaxNodeOnTree', this.objectHandle);
+%             [varargout{1:nargout}] = Forest_interface_mex('GetMaxNodeOnTree', this.forestHandle);
 %         end
 %         function varargout = GetLeftList(this)
-%             [varargout{1:nargout}] = Forest_interface_mex('GetLeftList', this.objectHandle);
+%             [varargout{1:nargout}] = Forest_interface_mex('GetLeftList', this.forestHandle);
 %         end
 %         function varargout = GetRightList(this)
-%             [varargout{1:nargout}] = Forest_interface_mex('GetRightList', this.objectHandle);
+%             [varargout{1:nargout}] = Forest_interface_mex('GetRightList', this.forestHandle);
 %         end
 %         function varargout = GetSplitFeatureList(this)
-%             [varargout{1:nargout}] = Forest_interface_mex('GetSplitFeatureList', this.objectHandle);
+%             [varargout{1:nargout}] = Forest_interface_mex('GetSplitFeatureList', this.forestHandle);
 %         end
 %         function varargout = GetSplitValueList(this)
-%             [varargout{1:nargout}] = Forest_interface_mex('GetSplitValueList', this.objectHandle);
+%             [varargout{1:nargout}] = Forest_interface_mex('GetSplitValueList', this.forestHandle);
 %         end
         function varargout = ConvertTreeToList(this)
-            [varargout{1:nargout}] = Forest_interface_mex('ConvertTreeToList', this.objectHandle);
+            [varargout{1:nargout}] = Forest_interface_mex('ConvertTreeToList', this.forestHandle);
         end
     end
 end
