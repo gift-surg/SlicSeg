@@ -245,7 +245,9 @@ function cuda_compiler = GetCudaCompiler
     else
         [status, cuda_compiler] = system('which nvcc');
 
-        if status ~= 0
+        if status == 0
+            cuda_compiler = CoreTextUtilities.RemoveNonprintableCharacters(cuda_compiler);
+        else
             if 2 == exist('/usr/local/cuda/bin/nvcc', 'file')
                 cuda_compiler = '/usr/local/cuda/bin/nvcc';
             else
