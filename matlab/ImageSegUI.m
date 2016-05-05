@@ -61,10 +61,19 @@ guidata(hObject, handles);
 
 % UIWAIT makes ImageSegUI wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
-global slicSeg;
 global imageSegUIController
-slicSeg=SlicSegAlgorithm();
-imageSegUIController = ImageSegUIController();
+global glbHandles;
+
+% Create a new UI controller which will manage the GUI state and mouse interaction
+imageSegUIController = ImageSegUIController(gcf, handles.axes_image);
+
+% Cache the handles so we can update the controls when the slice number
+% changes
+glbHandles = handles;
+
+% Listen for slice number change callbacks
+% addlistener(imageSegUIController, 'SliceNumberChanged', @UpdateSliceNumber);
+addlistener(imageSegUIController, 'currentViewImageIndex', 'PostSet', @UpdateSliceNumber);
 
 
 % --- Outputs from this function are returned to the command line.
@@ -83,36 +92,18 @@ function pushbutton_loadImage_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_loadImage (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global currentViewImageIndex;
-global slicSeg;
-global glbHandles;
+
+% Load the images
 global imageSegUIController
+imageSegUIController.selectAndLoad();
 
-glbHandles=handles;
-reset(handles.axes_image);
-cla(handles.axes_image);
-set(gcf,'WindowButtonDownFcn',{@imageSegUIController.mouse_down});
-set(gcf,'WindowButtonMotionFcn',{@imageSegUIController.mouse_move});
-set(gcf,'WindowButtonUpFcn',{@imageSegUIController.mouse_up});
-% imgFolderName=uigetdir;
-% defaultimgFolder='/Users/guotaiwang/Documents/MATLAB/ImageSeg/image16_14/img';
-[startFileName,imgFolderName,FilterIndex] = uigetfile('*.png','select a file');
-slicSeg.volumeImage = OpenPNGImage(imgFolderName);
-dirinfo=dir(fullfile(imgFolderName,'*.png'));
-sliceNumber=length(dirinfo);
-filenameLen=length(startFileName);
-currentViewImageIndex=str2num(startFileName(1:filenameLen-4));
+% Update the slice number and slider
+maxSliceNumber = imageSegUIController.getMaxSliceNumber;
+set(handles.text_totalslice,'String', ['Total number of slices: ' num2str(maxSliceNumber)]);
+set(handles.slider_imageIndex,'Min', 1);
+set(handles.slider_imageIndex,'Max', maxSliceNumber);
+set(handles.slider_imageIndex,'SliderStep',[1/(maxSliceNumber-1) 1]);
 
-imgSize=slicSeg.volumeImage.getImageSize;
-imageSegUIController.ResetLabelImage(imgSize);
-showResult();
-
-set(handles.text_currentslice,'String',['current slice number: ' num2str(currentViewImageIndex)]);
-set(handles.text_totalslice,'String',['total slice number: ' num2str(sliceNumber)]);
-set(handles.slider_imageIndex,'Min',1);
-set(handles.slider_imageIndex,'Max',sliceNumber);
-set(handles.slider_imageIndex,'Value',currentViewImageIndex);
-set(handles.slider_imageIndex,'SliderStep',[1/(sliceNumber-1) 1]);
 
 % --- Executes on button press in pushbutton_solectForground.
 function pushbutton_solectForground_Callback(hObject, eventdata, handles)
@@ -120,7 +111,8 @@ function pushbutton_solectForground_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global imageSegUIController
-imageSegUIController.SelectForeground();
+imageSegUIController.selectForeground();
+
 
 % --- Executes on button press in pushbutton_selectBackGound.
 function pushbutton_selectBackGound_Callback(hObject, eventdata, handles)
@@ -128,48 +120,27 @@ function pushbutton_selectBackGound_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global imageSegUIController
-imageSegUIController.SelectBackground();
+imageSegUIController.selectBackground();
+
 
 % --- Executes on button press in pushbutton_segment.
 function pushbutton_segment_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_segment (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% segment_callback_Treebag(handles);
-global slicSeg;
-global currentViewImageIndex;
 global imageSegUIController
-slicSeg.startIndex = currentViewImageIndex;
-slicSeg.seedImage = imageSegUIController.ILabel;
-slicSeg.StartSliceSegmentation();
-showResult();
+imageSegUIController.segment();
+
 
 % --- Executes on button press in pushbutton_Propagate.
 function pushbutton_Propagate_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_Propagate (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% forward=true
-global slicSeg;
-% global processBar;
-minSlice=str2num(get(handles.edit_min,'String'));
-maxSlice=str2num(get(handles.edit_max,'String'));
-slicSeg.sliceRange = [minSlice,maxSlice];
-
-addlistener(slicSeg,'SegmentationProgress',@UpdateSegmentationProgress);
-% processBar = waitbar(0,'Please wait...');
-slicSeg.SegmentationPropagate();
-% close(processBar) ;
-
-
-function UpdateSegmentationProgress(eventSrc,eventData)
-global currentViewImageIndex;
-global glbHandles;
-currentViewImageIndex=eventData.OrgValue;
-set(glbHandles.slider_imageIndex,'Value',currentViewImageIndex);
-set(glbHandles.text_currentslice,'String',['current slice number: ' num2str(currentViewImageIndex)]);
-showResult();
-
+global imageSegUIController
+minSlice=str2int(get(handles.edit_min,'String'));
+maxSlice=str2int(get(handles.edit_max,'String'));
+imageSegUIController.propagate(minSlice, maxSlice);
 
 
 % --- Executes on button press in pushbutton_reload.
@@ -177,14 +148,9 @@ function pushbutton_reload_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_reload (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global slicSeg;
 global imageSegUIController
+imageSegUIController.reset();
 
-imageSegUIController.ResetLabelImage(size(imageSegUIController.ILabel));
-
-slicSeg.ResetSegmentationResult();
-slicSeg.ResetSeedPoints();
-showResult();
 
 % --- Executes on slider movement.
 function slider_imageIndex_Callback(hObject, eventdata, handles)
@@ -194,10 +160,9 @@ function slider_imageIndex_Callback(hObject, eventdata, handles)
 
 % Hints: get(hObject,'Value') returns position of slider
 %        get(hObject,'Min') and get(hObject,'Max') to determine range of slider
-global currentViewImageIndex;
-currentViewImageIndex=round(get(handles.slider_imageIndex,'Value'));
-set(handles.text_currentslice,'String',['current slice number: ' num2str(currentViewImageIndex)]);
-showResult();
+global imageSegUIController
+imageSegUIController.currentViewImageIndex = round(get(handles.slider_imageIndex, 'Value'));
+
 
 % --- Executes during object creation, after setting all properties.
 function slider_imageIndex_CreateFcn(hObject, eventdata, handles)
@@ -209,7 +174,6 @@ function slider_imageIndex_CreateFcn(hObject, eventdata, handles)
 if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor',[.9 .9 .9]);
 end
-
 
 
 function edit_min_Callback(hObject, eventdata, handles)
@@ -234,7 +198,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
 end
 
 
-
 function edit_max_Callback(hObject, eventdata, handles)
 % hObject    handle to edit_max (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -255,3 +218,14 @@ function edit_max_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+function UpdateSliceNumber(eventSrc, eventData)
+    % Callback for when the controller's slice number has changed
+    global glbHandles;
+    currentViewImageIndex = eventData.AffectedObject.currentViewImageIndex;
+    set(glbHandles.slider_imageIndex, 'Value', currentViewImageIndex);
+    set(glbHandles.text_currentslice, 'String', ['Current slice number: ' num2str(currentViewImageIndex)]);
+
+
+
