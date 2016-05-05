@@ -12,7 +12,6 @@ classdef ForestWrapper < handle
     
     properties (SetAccess = private, Hidden = true)
         forestHandle  % Handle to the underlying C++ class instance
-        treeNum       % treeNumber
     end
     
     methods
@@ -29,7 +28,6 @@ classdef ForestWrapper < handle
 
         function varargout = Init(obj, varargin)
             % Initialise the random forest
-            obj.treeNum=varargin{1};
             [varargout{1:nargout}] = Forest_interface_mex('Init', obj.forest, varargin{:});
         end
 
@@ -43,27 +41,6 @@ classdef ForestWrapper < handle
             [varargout{1:nargout}] = Forest_interface_mex('Predict', obj.forestHandle, varargin{:});
         end
         
-        function varargout = GPUPredict(obj, varargin)
-            testData=varargin{1};
-            [Nf,Nte]=size(testData);
-
-            [left,right,splitFeature,splitValue]=obj.ConvertTreeToList();
-            maxnode=size(left,1);
-            gpuLeft=gpuArray(left);
-            gpuRight=gpuArray(right);
-            gpuSplitF=gpuArray(splitFeature);
-            gpuSplitV=gpuArray(splitValue);
-            gpuTestData=gpuArray(testData);
-            gpuPredict=gpuArray(zeros(Nte,1));
-            
-            k = parallel.gpu.CUDAKernel('ForestPredict.ptx','ForestPredict.cu','ForestPredict');
-            k.GridSize=[ceil(Nte/32),1,1];
-            k.ThreadBlockSize = [32,1,1];
-            gpuPredict=feval(k,gpuLeft,gpuRight,gpuSplitF,gpuSplitV,obj.treeNum,maxnode,...
-                gpuTestData,Nte,Nf,gpuPredict);
-            [varargout{1:nargout}]=gather(gpuPredict);
-        end
-
         function varargout = ConvertTreeToList(obj)
             [varargout{1:nargout}] = Forest_interface_mex('ConvertTreeToList', obj.forestHandle);
         end
