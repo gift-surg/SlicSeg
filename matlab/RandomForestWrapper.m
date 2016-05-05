@@ -6,7 +6,7 @@ classdef RandomForestWrapper < handle
     
     methods
         function obj = RandomForestWrapper()
-            obj.randomForest=Forest_interface();
+            obj.randomForest = ForestWrapper();
             obj.randomForest.Init(20,8,20);        
         end
         

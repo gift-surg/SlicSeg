@@ -1,5 +1,5 @@
-classdef Forest_interface < handle
-    % Forest_interface A wrapper around a C++ implementation of a random forest
+classdef ForestWrapper < handle
+    % ForestWrapper A wrapper around a C++ implementation of a random forest
     %
     % For more information see Slic-Seg (Wang et al, 2016)
     %
