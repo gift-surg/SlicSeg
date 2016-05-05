@@ -1,4 +1,4 @@
-classdef SlicSegGuiController < handle
+classdef ImageSegUIController < handle
     
     properties (SetAccess = private)
         ILabel

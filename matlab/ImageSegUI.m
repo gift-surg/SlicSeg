@@ -62,9 +62,9 @@ guidata(hObject, handles);
 % UIWAIT makes ImageSegUI wait for user response (see UIRESUME)
 % uiwait(handles.figure1);
 global slicSeg;
-global slicSegGuiController
+global imageSegUIController
 slicSeg=SlicSegAlgorithm();
-slicSegGuiController = SlicSegGuiController();
+imageSegUIController = ImageSegUIController();
 
 
 % --- Outputs from this function are returned to the command line.
@@ -86,14 +86,14 @@ function pushbutton_loadImage_Callback(hObject, eventdata, handles)
 global currentViewImageIndex;
 global slicSeg;
 global glbHandles;
-global slicSegGuiController
+global imageSegUIController
 
 glbHandles=handles;
 reset(handles.axes_image);
 cla(handles.axes_image);
-set(gcf,'WindowButtonDownFcn',{@slicSegGuiController.mouse_down});
-set(gcf,'WindowButtonMotionFcn',{@slicSegGuiController.mouse_move});
-set(gcf,'WindowButtonUpFcn',{@slicSegGuiController.mouse_up});
+set(gcf,'WindowButtonDownFcn',{@imageSegUIController.mouse_down});
+set(gcf,'WindowButtonMotionFcn',{@imageSegUIController.mouse_move});
+set(gcf,'WindowButtonUpFcn',{@imageSegUIController.mouse_up});
 % imgFolderName=uigetdir;
 % defaultimgFolder='/Users/guotaiwang/Documents/MATLAB/ImageSeg/image16_14/img';
 [startFileName,imgFolderName,FilterIndex] = uigetfile('*.png','select a file');
@@ -104,7 +104,7 @@ filenameLen=length(startFileName);
 currentViewImageIndex=str2num(startFileName(1:filenameLen-4));
 
 imgSize=slicSeg.volumeImage.getImageSize;
-slicSegGuiController.ResetLabelImage(imgSize);
+imageSegUIController.ResetLabelImage(imgSize);
 showResult();
 
 set(handles.text_currentslice,'String',['current slice number: ' num2str(currentViewImageIndex)]);
@@ -119,16 +119,16 @@ function pushbutton_solectForground_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_solectForground (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global slicSegGuiController
-slicSegGuiController.SelectForeground();
+global imageSegUIController
+imageSegUIController.SelectForeground();
 
 % --- Executes on button press in pushbutton_selectBackGound.
 function pushbutton_selectBackGound_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_selectBackGound (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-global slicSegGuiController
-slicSegGuiController.SelectBackground();
+global imageSegUIController
+imageSegUIController.SelectBackground();
 
 % --- Executes on button press in pushbutton_segment.
 function pushbutton_segment_Callback(hObject, eventdata, handles)
@@ -138,9 +138,9 @@ function pushbutton_segment_Callback(hObject, eventdata, handles)
 % segment_callback_Treebag(handles);
 global slicSeg;
 global currentViewImageIndex;
-global slicSegGuiController
+global imageSegUIController
 slicSeg.startIndex = currentViewImageIndex;
-slicSeg.seedImage = slicSegGuiController.ILabel;
+slicSeg.seedImage = imageSegUIController.ILabel;
 slicSeg.StartSliceSegmentation();
 showResult();
 
@@ -178,9 +178,9 @@ function pushbutton_reload_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global slicSeg;
-global slicSegGuiController
+global imageSegUIController
 
-slicSegGuiController.ResetLabelImage(size(slicSegGuiController.ILabel));
+imageSegUIController.ResetLabelImage(size(imageSegUIController.ILabel));
 
 slicSeg.ResetSegmentationResult();
 slicSeg.ResetSeedPoints();
