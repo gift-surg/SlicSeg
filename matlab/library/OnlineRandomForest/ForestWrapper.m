@@ -15,7 +15,7 @@ classdef ForestWrapper < handle
     end
     
     methods
-        function this = Forest_interface(varargin)
+        function this = ForestWrapper(varargin)
             % Create a new instance of the C++ class
             this.forestHandle = Forest_interface_mex('new', varargin{:});
         end
@@ -28,7 +28,7 @@ classdef ForestWrapper < handle
 
         function varargout = Init(obj, varargin)
             % Initialise the random forest
-            [varargout{1:nargout}] = Forest_interface_mex('Init', obj.forest, varargin{:});
+            [varargout{1:nargout}] = Forest_interface_mex('Init', obj.forestHandle, varargin{:});
         end
 
         function varargout = Train(obj, varargin)

@@ -25,7 +25,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
         volumeImage       % 3D input volume image
         seedImage         % 2D seed image containing user-provided scribbles in the start slice
         
-        orientation       % The index of the dimension perpendicular to the seedImage slice
+        orientation = 3   % The index of the dimension perpendicular to the seedImage slice
         startIndex        % start slice index
         sliceRange        % 2x1 matrix to store the minimum and maximum slice index. Leave empty to use first and last slices
         
@@ -78,12 +78,13 @@ classdef SlicSegAlgorithm < CoreBaseClass
             if(isempty(obj.startIndex) || isempty(obj.seedImage))
                 error('startIndex and seedImage must be set before calling StartSliceSegmentation()');
             end
-            if((obj.startIndex < 1) || (obj.startIndex > obj.volumeImage.ImageSize(obj.orientation)))
+            imageSize = obj.volumeImage.getImageSize;
+            if((obj.startIndex < 1) || (obj.startIndex > imageSize(obj.orientation)))
                  error('startIndex is not set to a valid value in the range for this image size and orientation');
             end
             seedLabels = obj.GetSeedLabelImage();
             currentSegIndex = obj.startIndex;
-            volumeSlice = obj.volumeImage.Get2DSlice(currentSegIndex, obj.orientation);
+            volumeSlice = obj.volumeImage.get2DSlice(currentSegIndex, obj.orientation);
             obj.randomForest.Train(seedLabels, volumeSlice);
             [probabilitySlice, segmentationSlice] = obj.randomForest.PredictUsingConnectivity(seedLabels, volumeSlice, obj.lambda, obj.sigma);
             obj.UpdateResults(currentSegIndex, segmentationSlice, probabilitySlice);
@@ -141,7 +142,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
         
         function ResetSeedPoints(obj)
             % Deletes the current seed points
-            sliceSize = obj.volumeImage.get2DSliceSlize(obj.orientation);
+            sliceSize = obj.volumeImage.get2DSliceSize(obj.orientation);
             obj.seedImage = zeros(sliceSize, 'uint8');
         end
         

@@ -3,10 +3,10 @@ global slicSeg;
 global currentViewImageIndex;
 global glbHandles;
 
-I=slicSeg.volumeImage.get2DSlice(currentViewImageIndex, slicSeg.Orientation);
+I=slicSeg.volumeImage.get2DSlice(currentViewImageIndex, slicSeg.orientation);
 showI=repmat(I,1,1,3);
 
-segI=slicSeg.segImage.get2DSlice(currentViewImageIndex, slicSeg.Orientation);
+segI=slicSeg.segImage.get2DSlice(currentViewImageIndex, slicSeg.orientation);
 if(~isempty(find(segI,1)))
     showI=addContourToImage(showI,segI);
 end

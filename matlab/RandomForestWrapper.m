@@ -13,7 +13,7 @@ classdef RandomForestWrapper < handle
         function Train(obj, currentTrainLabel, volumeSlice)
             % train the random forest using scribbles in on slice
             
-            featureMatrix = SlicSegAlgorithm.GetSliceFeature(volumeSlice);
+            featureMatrix = RandomForestWrapper.GetSliceFeature(volumeSlice);
             if(isempty(currentTrainLabel) || isempty(find(currentTrainLabel>0)))
                 error('the training set is empty');
             end
