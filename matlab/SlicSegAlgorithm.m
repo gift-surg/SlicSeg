@@ -93,7 +93,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
         function SegmentationPropagate(obj)
             % Propagates the segmentation obtained from StartSliceSegmentation() to the remaining slices
             
-            maxSliceIndex = obj.volumeImage.ImageSize(obj.orientation);
+            maxSliceIndex = obj.volumeImage.getMaxSliceNumber(obj.orientation);
             
             % If no slice range has been specified we use the image limits
             if isempty(obj.sliceRange)
@@ -102,7 +102,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
             else
                 minSlice = obj.sliceRange(1);
                 maxSlice = obj.sliceRange(2);
-                if (currentSliceRange(1) < 1) || (currentSliceRange(2) > maxSliceIndex)
+                if (minSlice < 1) || (maxSlice > maxSliceIndex)
                     error('Slice index is out of range for the current image orientation');
                 end
             end

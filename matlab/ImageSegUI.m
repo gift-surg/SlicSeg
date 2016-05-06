@@ -137,8 +137,8 @@ function pushbutton_propagate_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global imageSegUIController
-minSlice=str2int(get(handles.edit_min,'String'));
-maxSlice=str2int(get(handles.edit_max,'String'));
+minSlice=str2double(get(handles.edit_min,'String'));
+maxSlice=str2double(get(handles.edit_max,'String'));
 imageSegUIController.propagate(minSlice, maxSlice);
 
 

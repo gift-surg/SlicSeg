@@ -3,10 +3,6 @@ classdef ImageWrapper < handle
         rawImage
     end
     
-    properties (Dependent)
-        ImageSize % Returns the image size
-    end    
-    
     methods
         function obj = ImageWrapper(imageData)
             if nargin > 0
@@ -22,6 +18,12 @@ classdef ImageWrapper < handle
                 imageSize = size(obj.rawImage);
             end
         end        
+
+        function maxValue = getMaxSliceNumber(obj, orientation)
+            % Returns the number of slices in the currently loaded image
+            imageSize = obj.getImageSize;
+            maxValue = max(1, imageSize(orientation));
+        end
         
         function slice = get2DSlice(obj, sliceNumber, dimension)
             % Returns a 2D slice from the image in the specified direction
