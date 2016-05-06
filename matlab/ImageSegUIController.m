@@ -153,10 +153,10 @@ classdef ImageSegUIController < CoreBaseClass
             
             segI = obj.slicSeg.segImage.get2DSlice(obj.currentViewImageIndex, obj.slicSeg.orientation);
             if(~isempty(find(segI,1)))
-                showI=addContourToImage(showI,segI);
+                showI=obj.addContourToImage(showI,segI);
             end
             if(obj.currentViewImageIndex==obj.slicSeg.startIndex)
-                showI=addSeedsToImage(showI,obj.slicSeg.seedImage);
+                showI=obj.addSeedsToImage(showI,obj.slicSeg.seedImage);
             end
             axes(obj.imageAxes);
             imshow(showI);
