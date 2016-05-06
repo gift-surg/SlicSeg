@@ -104,7 +104,7 @@ set(handles.slider_imageIndex,'Max', maxSliceNumber);
 set(handles.slider_imageIndex,'SliderStep',[1/(maxSliceNumber-1) 1]);
 
 
-% --- Executes on button press in pushbutton_solectForground.
+% --- Executes on button press in pushbutton_selectForeground.
 function pushbutton_selectForeground_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_solectForground (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -113,7 +113,7 @@ global imageSegUIController
 imageSegUIController.leftMouseSelectsForeground = true;
 
 
-% --- Executes on button press in pushbutton_selectBackGound.
+% --- Executes on button press in pushbutton_selectBackground.
 function pushbutton_selectBackground_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_selectBackGound (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -131,7 +131,7 @@ global imageSegUIController
 imageSegUIController.segment();
 
 
-% --- Executes on button press in pushbutton_Propagate.
+% --- Executes on button press in pushbutton_propagate.
 function pushbutton_propagate_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_Propagate (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
