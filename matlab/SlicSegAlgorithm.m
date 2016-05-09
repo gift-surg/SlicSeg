@@ -158,7 +158,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
         function Train(obj, currentTrainLabel, volumeSlice)
             % train the random forest using scribbles in on slice
             
-            featureMatrix = SlicSegAlgorithm.GetSliceFeature(volumeSlice);
+            featureMatrix = image2FeatureMatrix(volumeSlice);
             if(isempty(currentTrainLabel) || isempty(find(currentTrainLabel>0)))
                 error('the training set is empty');
             end
@@ -271,7 +271,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
         end
         
         function P0 = Predict(obj, volumeSlice)
-            featureMatrix = SlicSegAlgorithm.GetSliceFeature(volumeSlice);
+            featureMatrix = image2FeatureMatrix(volumeSlice);
             Prob = obj.getRandomForest.Predict(featureMatrix');
             P0 = reshape(Prob, size(volumeSlice,1), size(volumeSlice,2));
         end        
@@ -342,17 +342,6 @@ classdef SlicSegAlgorithm < CoreBaseClass
             
             Lindex=find(L==0);
             P(Lindex)=P(Lindex)*0.4;
-        end
-        
-        function featureMatrix = GetSliceFeature(I)
-            % get the feature matrix for given slice
-            dwtFeature = image2DWTfeature(I);
-            hogFeature = image2HOGFeature(I);
-            %             lbpFeature=image2LBPFeature(I);
-            intensityFeature = image2IntensityFeature(I);
-            % glmcfeatures=image2GLCMfeature(I);
-            % featureMatrix=[intensityFeature dwtFeature];% glmcfeatures];
-            featureMatrix = [intensityFeature hogFeature dwtFeature];
         end
         
         function seg = GetSingleSliceSegmentation(currentSeedLabel, currentI, currentP, lambda, sigma)
