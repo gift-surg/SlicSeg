@@ -7,16 +7,7 @@ function mex_files_to_compile_map = SlicSegGetMexFilesToCompile(~)
     files_to_compile = {};
     [mex_dir, ~, ~] = fileparts(mfilename('fullpath'));
     
-    % dwt
-    files_to_compile{end + 1} = CoreMexInfo(1, 'wgtDWT', 'cpp', fullfile(mex_dir, 'library', 'dwt'), [], ...
-        {fullfile(mex_dir, 'library', 'dwt', 'convolution.cpp')} ...
-    );
-    
     % maxflow    
-    files_to_compile{end + 1} = CoreMexInfo(1, 'maxflowmex', 'cpp', fullfile(mex_dir, 'library', 'maxflow'), [], ...
-        {fullfile(mex_dir, 'library', 'maxflow', 'maxflow-v3.0', 'graph.cpp'), fullfile(mex_dir, 'library', 'maxflow', 'maxflow-v3.0', 'maxflow.cpp')} ...
-    );
-
     files_to_compile{end + 1} = CoreMexInfo(2, 'wgtmaxflowmex', 'cpp', fullfile(mex_dir, 'library', 'maxflow'), [], ...
         {fullfile(mex_dir, 'library', 'maxflow', 'maxflow-v3.0', 'graph.cpp'), fullfile(mex_dir, 'library', 'maxflow', 'maxflow-v3.0', 'maxflow.cpp')} ...
     );
@@ -34,8 +25,6 @@ function mex_files_to_compile_map = SlicSegGetMexFilesToCompile(~)
     % Cuda files - FeatureExtract
     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'imageGradient', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'imageHoG', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
-%     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'LBPNumber', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
-%     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'LBPFeature', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
     files_to_compile{end + 1} = CoreCudaInfo('nvcc', 1, 'intensityFeature', 'cu', fullfile(mex_dir, 'library', 'FeatureExtract'), '-ptx', []);
     
     % Cuda files - Online random forest
