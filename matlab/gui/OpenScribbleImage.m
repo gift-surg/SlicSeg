@@ -1,4 +1,4 @@
- function seedImage = OpenScribbleImage(obj,labelFileName)
+ function seedImage = OpenScribbleImage(labelFileName)
     % read scribbles in the start slice (*.png rgb file)
     rgbLabel=imread(labelFileName);
     ISize=size(rgbLabel);
@@ -13,5 +13,4 @@
         end
     end
     seedImage = ILabel;
-    disp('seed image has been loaded successfully');
  end

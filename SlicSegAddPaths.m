@@ -24,6 +24,8 @@ function SlicSegAddPaths(varargin)
         % List of folders to add to the path
         path_folders{end + 1} = '';
         path_folders{end + 1} = fullfile('matlab');
+        path_folders{end + 1} = fullfile('matlab', 'gui');
+        path_folders{end + 1} = fullfile('matlab', 'test');
         path_folders{end + 1} = fullfile('matlab', 'library', 'coremat');
         path_folders{end + 1} = fullfile('matlab', 'library', 'dwt');
         path_folders{end + 1} = fullfile('matlab', 'library', 'FeatureExtract');

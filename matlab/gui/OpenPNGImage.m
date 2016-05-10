@@ -1,4 +1,4 @@
-function loadedImage = OpenImage(imgFolderName)
+function loadedImage = OpenPNGImage(imgFolderName)
     % read volume image from a folder, which contains a chain of
     % *.png images indexed from 1 to the number of slices.
 
