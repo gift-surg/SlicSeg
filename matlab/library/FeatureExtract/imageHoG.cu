@@ -17,7 +17,6 @@ __device__ void setPixel(double *array,int H,int W,int i,int j,double value)
     }
     *(array+H*j+i) = value;
 }
-__global__ void imageHoG(const double * g_mag,const double * g_ori,double *hog,const int H,const int W,const int bins,const int r)
 
 __global__ void imageHoG(const double *g_mag, const double *g_ori, double *hog, const int H, const int W, const int bins, const int r)
 {
@@ -30,12 +29,12 @@ __global__ void imageHoG(const double *g_mag, const double *g_ori, double *hog, 
     {
         for(int j=-r; j<=r; j++)
         {
-            double mag = Utilities::getPixel(g_mag, H, W, x+i, y+j);
-            double ori = Utilities::getPixel(g_ori, H, W, x+i, y+j);
+            double mag = getPixel(g_mag, H, W, x+i, y+j);
+            double ori = getPixel(g_ori, H, W, x+i, y+j);
             int bin_n = floor((ori+pi)/bin_len);
             double dis = (double)(i*i+j*j)/(r*r);
             double dvalue = mag*(exp(-dis));
-            double newValue = dvalue + Utilities::getPixel(hog, imageLen, bins, H*y+x, bin_n);
+            double newValue = dvalue + getPixel(hog, imageLen, bins, H*y+x, bin_n);
             setPixel(hog, imageLen, bins, H*y+x, bin_n, newValue);
         }
     }
@@ -48,7 +47,7 @@ __global__ void imageHoG(const double *g_mag, const double *g_ori, double *hog, 
     {
         for(int i=0; i<bins; i++)
         {
-            double newValue = Utilities::getPixel(hog, imageLen, bins, H*y+x, i)/sum;
+            double newValue = getPixel(hog, imageLen, bins, H*y+x, i)/sum;
             setPixel(hog, imageLen, bins, H*y+x, i, newValue);
         }
     }
