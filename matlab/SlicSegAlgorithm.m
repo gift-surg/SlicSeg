@@ -87,7 +87,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
             obj.Train(seedLabels, volumeSlice);
             P0 = obj.Predict(volumeSlice);
             probabilitySlice = SlicSegAlgorithm.ProbabilityProcessUsingConnectivity(seedLabels, P0, volumeSlice);
-            segmentationSlice = SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel, volumeSlice, probabilitySlice, obj.lambda, obj.sigma);            
+            segmentationSlice = SlicSegAlgorithm.GetSingleSliceSegmentation(seedLabels, volumeSlice, probabilitySlice, obj.lambda, obj.sigma);            
             obj.UpdateResults(currentSegIndex, segmentationSlice, probabilitySlice);
         end
         
@@ -108,28 +108,17 @@ classdef SlicSegAlgorithm < CoreBaseClass
                 end
             end
             
-            currentSegIndex = obj.startIndex;
-            
-            % First we propagate to the neighbours of the initial slice. We
-            % do this first because the algorithm is trained on this initial slice
-            if currentSegIndex > minSlice
-                obj.TrainAndPropagate(false, currentSegIndex - 1, currentSegIndex);                
-            end
-            if currentSegIndex < maxSlice
-                obj.TrainAndPropagate(false, currentSegIndex + 1, currentSegIndex);                
-            end
-            
-            % Propagate backwards from the backwards neighbour of the initial slice
-            priorSegIndex = obj.startIndex - 1;
+            % Propagate backwards from the initial slice
+            priorSegIndex = obj.startIndex;
             for currentSegIndex = obj.startIndex-1 : -1 : minSlice
-                obj.TrainAndPropagate(true, currentSegIndex, priorSegIndex);
+                obj.PropagateAndTrain(currentSegIndex, priorSegIndex);
                 priorSegIndex=currentSegIndex;
             end
             
-            % Propagate forwards from forwards neighbour of the initial slice
-            priorSegIndex = obj.startIndex + 1;
+            % Propagate forwards from the initial slice
+            priorSegIndex = obj.startIndex;
             for currentSegIndex = obj.startIndex+1 : maxSlice
-                obj.TrainAndPropagate(true, currentSegIndex, priorSegIndex);
+                obj.PropagateAndTrain(currentSegIndex, priorSegIndex);
                 priorSegIndex=currentSegIndex;
             end
         end
@@ -195,17 +184,22 @@ classdef SlicSegAlgorithm < CoreBaseClass
             randomForest = obj.randomForest;
         end
         
-        function TrainAndPropagate(obj, train, currentSegIndex, priorSegIndex)
-            priorSegmentedSlice = obj.segImage.get2DSlice(priorSegIndex, obj.orientation);
-            [currentSeedLabel, currentTrainLabel] = SlicSegAlgorithm.getSeedLabels(priorSegmentedSlice, obj.innerDis, obj.outerDis);
-            if(train)
-                priorVolumeSlice = obj.volumeImage.get2DSlice(priorSegIndex, obj.orientation);
-                obj.Train(currentTrainLabel, priorVolumeSlice);
-            end
+        function PropagateAndTrain(obj, currentSegIndex, priorSegIndex)
+            % Get prediction for current slice using previous slice segmentation as a prior
             currentVolumeSlice = obj.volumeImage.get2DSlice(currentSegIndex, obj.orientation);
             P0 = obj.Predict(currentVolumeSlice);
+            priorSegmentedSlice = obj.segImage.get2DSlice(priorSegIndex, obj.orientation);
             probabilitySlice = SlicSegAlgorithm.ProbabilityProcessUsingShapePrior(P0, priorSegmentedSlice);
-            segmentationSlice = SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel, volumeSlice, probabilitySlice, obj.lambda, obj.sigma);
+
+            % Compute seed labels based on previous slices
+            [priorSeedLabel, ~] = SlicSegAlgorithm.getSeedLabels(priorSegmentedSlice, obj.innerDis, obj.outerDis);
+            segmentationSlice = SlicSegAlgorithm.GetSingleSliceSegmentation(priorSeedLabel, currentVolumeSlice, probabilitySlice, obj.lambda, obj.sigma);
+            
+            % Further train the algorithm based on the newly segmented slice
+            [~, currentTrainLabel] = SlicSegAlgorithm.getSeedLabels(segmentationSlice, obj.innerDis, obj.outerDis);                
+            obj.Train(currentTrainLabel, currentVolumeSlice);
+            
+            % Update the output images
             obj.UpdateResults(currentSegIndex, segmentationSlice, probabilitySlice);
         end
         
@@ -283,7 +277,6 @@ classdef SlicSegAlgorithm < CoreBaseClass
             L(seedsIndex)=1;
             P(seedsIndex)=1.0;
             
-            
             fg=I(seedsIndex);
             fg_mean=mean(fg);
             fg_std=sqrt(var(double(fg)));
@@ -326,7 +319,6 @@ classdef SlicSegAlgorithm < CoreBaseClass
         function [currentSeedLabel, currentTrainLabel] = getSeedLabels(currentSegImage, fgr, bgr)
             % generate new training data (for random forest) and new seeds
             % (hard constraint for max-flow) based on segmentation in last slice
-            
             
             tempSegLabel=currentSegImage;
             fgSe1=strel('disk',fgr);
