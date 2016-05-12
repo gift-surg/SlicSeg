@@ -85,7 +85,9 @@ classdef SlicSegAlgorithm < CoreBaseClass
             currentSegIndex = obj.startIndex;
             volumeSlice = obj.volumeImage.get2DSlice(currentSegIndex, obj.orientation);
             obj.Train(seedLabels, volumeSlice);
-            [probabilitySlice, segmentationSlice] = obj.PredictUsingConnectivity(seedLabels, volumeSlice, obj.lambda, obj.sigma);
+            P0 = obj.Predict(volumeSlice);
+            probabilitySlice = SlicSegAlgorithm.ProbabilityProcessUsingConnectivity(seedLabels, P0, volumeSlice);
+            segmentationSlice = SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel, volumeSlice, probabilitySlice, obj.lambda, obj.sigma);            
             obj.UpdateResults(currentSegIndex, segmentationSlice, probabilitySlice);
         end
         
@@ -185,20 +187,6 @@ classdef SlicSegAlgorithm < CoreBaseClass
             obj.getRandomForest.Train(TrainingDataWithLabel');
         end
         
-        function [probabilitySlice, segmentationSlice] = PredictUsingPrior(obj, currentSeedLabel, volumeSlice, priorSegSlice, lambda, sigma)
-            % get the probability in one slice
-            P0 = obj.Predict(volumeSlice);
-            probabilitySlice=SlicSegAlgorithm.ProbabilityProcessUsingShapePrior(P0,priorSegSlice);
-            segmentationSlice = SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel, volumeSlice, probabilitySlice, lambda, sigma);
-        end
-        
-        function [probabilitySlice, segmentationSlice] = PredictUsingConnectivity(obj, currentSeedLabel, volumeSlice, lambda, sigma)
-            % get the probability in one slice
-            P0 = obj.Predict(volumeSlice);
-            probabilitySlice = SlicSegAlgorithm.ProbabilityProcessUsingConnectivity(currentSeedLabel, P0, volumeSlice);
-            segmentationSlice = SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel, volumeSlice, probabilitySlice, lambda, sigma);            
-        end
-        
         function randomForest = getRandomForest(obj)
             if isempty(obj.randomForest)
                 obj.randomForest = ForestWrapper();
@@ -215,7 +203,9 @@ classdef SlicSegAlgorithm < CoreBaseClass
                 obj.Train(currentTrainLabel, priorVolumeSlice);
             end
             currentVolumeSlice = obj.volumeImage.get2DSlice(currentSegIndex, obj.orientation);
-            [probabilitySlice, segmentationSlice] = obj.PredictUsingPrior(currentSeedLabel, currentVolumeSlice, priorSegmentedSlice, obj.lambda, obj.sigma);
+            P0 = obj.Predict(currentVolumeSlice);
+            probabilitySlice = SlicSegAlgorithm.ProbabilityProcessUsingShapePrior(P0, priorSegmentedSlice);
+            segmentationSlice = SlicSegAlgorithm.GetSingleSliceSegmentation(currentSeedLabel, volumeSlice, probabilitySlice, obj.lambda, obj.sigma);
             obj.UpdateResults(currentSegIndex, segmentationSlice, probabilitySlice);
         end
         
