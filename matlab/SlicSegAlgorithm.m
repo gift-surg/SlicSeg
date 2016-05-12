@@ -197,7 +197,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
         
         function TrainAndPropagate(obj, train, currentSegIndex, priorSegIndex)
             priorSegmentedSlice = obj.segImage.get2DSlice(priorSegIndex, obj.orientation);
-            [currentSeedLabel, currentTrainLabel] = obj.UpdateSeedLabel(priorSegmentedSlice);
+            [currentSeedLabel, currentTrainLabel] = SlicSegAlgorithm.getSeedLabels(priorSegmentedSlice, obj.innerDis, obj.outerDis);
             if(train)
                 priorVolumeSlice = obj.volumeImage.get2DSlice(priorSegIndex, obj.orientation);
                 obj.Train(currentTrainLabel, priorVolumeSlice);
@@ -226,36 +226,6 @@ classdef SlicSegAlgorithm < CoreBaseClass
                 label(5,j)=255;
                 label(H-5,j)=255;
             end
-        end
-        
-        function [currentSeedLabel, currentTrainLabel] = UpdateSeedLabel(obj, currentSegImage)
-            % generate new training data (for random forest) and new seeds
-            % (hard constraint for max-flow) based on segmentation in last slice
-            
-            fgr = obj.innerDis;
-            bgr = obj.outerDis;
-            
-            tempSegLabel=currentSegImage;
-            fgSe1=strel('disk',fgr);
-            fgMask=imerode(tempSegLabel,fgSe1);
-            if(length(find(fgMask>0))<100)
-                fgMask=bwmorph(tempSegLabel,'skel',Inf);
-            else
-                fgMask=bwmorph(fgMask,'skel',Inf);
-            end
-            bgSe1=strel('disk',bgr);
-            bgSe2=strel('disk',bgr+1);
-            fgDilate1=imdilate(tempSegLabel,bgSe1);
-            fgDilate2=imdilate(tempSegLabel,bgSe2);
-            bgMask=fgDilate2-fgDilate1;
-            currentTrainLabel=uint8(zeros(size(tempSegLabel)));
-            currentTrainLabel(fgMask>0)=127;
-            currentTrainLabel(bgMask>0)=255;
-            
-            bgMask=1-fgDilate1;
-            currentSeedLabel=uint8(zeros(size(tempSegLabel)));
-            currentSeedLabel(fgMask>0)=127;
-            currentSeedLabel(bgMask>0)=255;
         end
         
         function ResetSeedAndSegmentationResultCallback(obj, ~, ~, ~)
@@ -351,6 +321,35 @@ classdef SlicSegAlgorithm < CoreBaseClass
             currentSegLabel = imclose(currentSegLabel, se);
             currentSegLabel = imopen(currentSegLabel, se);
             seg = currentSegLabel(:,:);
-        end 
+        end
+        
+        function [currentSeedLabel, currentTrainLabel] = getSeedLabels(currentSegImage, fgr, bgr)
+            % generate new training data (for random forest) and new seeds
+            % (hard constraint for max-flow) based on segmentation in last slice
+            
+            
+            tempSegLabel=currentSegImage;
+            fgSe1=strel('disk',fgr);
+            fgMask=imerode(tempSegLabel,fgSe1);
+            if(length(find(fgMask>0))<100)
+                fgMask=bwmorph(tempSegLabel,'skel',Inf);
+            else
+                fgMask=bwmorph(fgMask,'skel',Inf);
+            end
+            bgSe1=strel('disk',bgr);
+            bgSe2=strel('disk',bgr+1);
+            fgDilate1=imdilate(tempSegLabel,bgSe1);
+            fgDilate2=imdilate(tempSegLabel,bgSe2);
+            bgMask=fgDilate2-fgDilate1;
+            currentTrainLabel=uint8(zeros(size(tempSegLabel)));
+            currentTrainLabel(fgMask>0)=127;
+            currentTrainLabel(bgMask>0)=255;
+            
+            bgMask=1-fgDilate1;
+            currentSeedLabel=uint8(zeros(size(tempSegLabel)));
+            currentSeedLabel(fgMask>0)=127;
+            currentSeedLabel(bgMask>0)=255;
+        end
+        
     end    
 end
