@@ -22,7 +22,6 @@ function CoreCompileMexFiles(mex_cache, output_directory, mex_files_to_compile, 
     %     Distributed under the MIT licence. Please see website for details.
     %    
     
-    reporting.ShowProgress('Checking mex files');
     cached_mex_file_info = mex_cache.MexInfoMap;
     framework_cache_was_missing = mex_cache.IsNewlyCreated;
     
@@ -38,7 +37,6 @@ function CoreCompileMexFiles(mex_cache, output_directory, mex_files_to_compile, 
     end
     
     mex_cache.UpdateCache(mex_files_to_compile, reporting);
-    reporting.CompleteProgress;
 end
 
 function compiler = MexSetup(retry_instructions, reporting)
@@ -134,7 +132,7 @@ function Compile(mex_files_to_compile, framework_cache, cached_mex_file_info, ou
                 else
                     if ~progress_message_showing_compile
                         progress_message_showing_compile = true;
-                        reporting.UpdateProgressMessage('Compiling mex files');
+                        reporting.ShowProgress('Compiling mex files');
                     end
                     if isa(mex_file, 'CoreCudaInfo')
                         mex_result = CoreCudaCompile.Compile(cuda_compiler, mex_file, src_fullfile, output_directory);
@@ -156,6 +154,9 @@ function Compile(mex_files_to_compile, framework_cache, cached_mex_file_info, ou
                 end
             end
         end
+    end
+    if progress_message_showing_compile
+        reporting.CompleteProgress;        
     end
 end
 
