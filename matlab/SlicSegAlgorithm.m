@@ -22,7 +22,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
     %
     
     properties (SetObservable)
-        volumeImage       % 3D input volume image
+        volumeImage = ImageWrapper()      % 3D input volume image
         seedImage         % 2D seed image containing user-provided scribbles in the start slice
         
         orientation = 3   % The index of the dimension perpendicular to the seedImage slice

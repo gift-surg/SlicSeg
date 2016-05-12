@@ -4,6 +4,6 @@ function SavePNGSegmentation(segImage, segSaveFolder, orientation)
     end
     for index = 1 : segImage.getMaxSliceNumber(orientation)
         segFileName=fullfile(segSaveFolder,[num2str(index) '_seg.png']);
-        imwrite(segImage.RawImage(:,:,index)*255,segFileName);
+        imwrite(segImage.rawImage(:,:,index)*255,segFileName);
     end
 end
