@@ -57,7 +57,6 @@ classdef SlicSegAlgorithm < CoreBaseClass
             % When these properties are changed, we invalidate just the segmentation results
             obj.AddPostSetListener(obj, 'seedImage', @obj.ResetSegmentationResultCallback);
             obj.AddPostSetListener(obj, 'startIndex', @obj.ResetSegmentationResultCallback);
-            obj.AddPostSetListener(obj, 'sliceRange', @obj.ResetSegmentationResultCallback);
             obj.AddPostSetListener(obj, 'lambda', @obj.ResetSegmentationResultCallback);
             obj.AddPostSetListener(obj, 'sigma', @obj.ResetSegmentationResultCallback);
             obj.AddPostSetListener(obj, 'innerDis', @obj.ResetSegmentationResultCallback);
