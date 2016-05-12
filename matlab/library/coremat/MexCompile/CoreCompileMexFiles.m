@@ -95,17 +95,27 @@ function Compile(mex_files_to_compile, framework_cache, cached_mex_file_info, ou
             else
                 reporting.Error('CoreCompileMexFiles:UnexpectedStatus', 'Program error: An unexpected status condiiton was found'); 
             end
-                
+
+            src_filename = [mex_file.Name '.' mex_file.Extension];
+            src_fullfile = fullfile(mex_file.Path, src_filename);
+            files = dir(src_fullfile);
+            last_modified_datenum = files.datenum;
+            
             if cached_mex_file_info.isKey(mex_file.Name)
                 cached_mex_file = cached_mex_file_info(mex_file.Name);
                 version_unchanged_since_last_compilation_attempt = isequal(cached_mex_file.LastAttemptedCompiledVersion, mex_file.CurrentVersion);
                 compiler_unchanged_since_last_compilation_attempt = isequal(cached_mex_file.LastAttemptedCompiler, compiler);
+                if isempty(cached_mex_file.LastAttemptedCompileDatenum)
+                    datenum_unchanged_since_last_compilation_attempt = true;
+                else
+                    datenum_unchanged_since_last_compilation_attempt = isequal(cached_mex_file.LastAttemptedCompileDatenum, last_modified_datenum);
+                end
                 compiled_failed_last_time = cached_mex_file.LastCompileFailed;
                 if isempty(compiled_failed_last_time)
                     compiled_failed_last_time = false;
                 end
                 
-                if compiled_failed_last_time && version_unchanged_since_last_compilation_attempt && compiler_unchanged_since_last_compilation_attempt;
+                if compiled_failed_last_time && version_unchanged_since_last_compilation_attempt && compiler_unchanged_since_last_compilation_attempt && datenum_unchanged_since_last_compilation_attempt;
                     try_compilation_again = false;
                 else
                     try_compilation_again = true;
@@ -114,8 +124,6 @@ function Compile(mex_files_to_compile, framework_cache, cached_mex_file_info, ou
                 try_compilation_again = true;
             end
             
-            src_filename = [mex_file.Name '.' mex_file.Extension];
-            src_fullfile = fullfile(mex_file.Path, src_filename);
             if ~(try_compilation_again || force_recompile)
                 reporting.ShowWarning('CoreCompileMexFiles:NotRecompiling', ['The mex source file ' src_fullfile ' needs recompilation, but the previous attempt to compile failed so I am not going to try again. You need to force a recompilation.' retry_instructions], []);
             else
@@ -133,6 +141,7 @@ function Compile(mex_files_to_compile, framework_cache, cached_mex_file_info, ou
                     end
                     mex_file.LastAttemptedCompiledVersion = mex_file.CurrentVersion;
                     mex_file.LastAttemptedCompiler = compiler;
+                    mex_file.LastAttemptedCompileDatenum = last_modified_datenum;
                     if (mex_result == 0)
                         mex_file.LastCompileFailed = false;
                         mex_file.LastSuccessfulCompiledVersion = mex_file.CurrentVersion;
