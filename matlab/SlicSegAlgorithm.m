@@ -131,7 +131,15 @@ classdef SlicSegAlgorithm < CoreBaseClass
                 priorSegIndex=currentSegIndex;
             end
         end
-
+        
+        function Reset(obj)
+            % Resets the random forest and results
+            obj.randomForest = [];
+            obj.volumeImage = ImageWrapper();
+            obj.ResetSegmentationResult();
+            obj.ResetSegmentationResult();
+        end
+        
         function ResetSegmentationResult(obj)
             % Deletes the current segmentation results
             fullImageSize = obj.volumeImage.getImageSize;

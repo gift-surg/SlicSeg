@@ -54,6 +54,7 @@ classdef ImageSegUIController < CoreBaseClass
             reset(obj.imageAxes);
             cla(obj.imageAxes);
             [~, imgFolderName, ~] = uigetfile('*.png','select a file');
+            obj.slicSeg.Reset();
             obj.slicSeg.volumeImage = OpenPNGImage(imgFolderName);
             maxSliceNumber = obj.getMaxSliceNumber;
             currentSliceNumber = max(1, min(maxSliceNumber, round(maxSliceNumber/2)));
