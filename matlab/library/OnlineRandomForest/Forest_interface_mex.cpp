@@ -1,6 +1,22 @@
+// Online Random Forest
+//
+// This is a C++ mex file that is automatically compiled by the function CompileSlicSeg
+//
+// This mex interface is partly inspired by the Example MATLAB class wrapper by Oliver Woodford (see library/C___class_interface)
+// 
+//
+// Author: Guotai Wang
+// Copyright (c) 2014-2016 University College London, United Kingdom. All rights reserved.
+// http://cmictig.cs.ucl.ac.uk
+//
+// Distributed under the BSD-3 licence. Please see the file licence.txt 
+// This software is not certified for clinical use.
+// 
+
 #include "mex.h"
-#include "class_handle.hpp"
+#include "../C___class_interface/class_handle.hpp"
 #include "ORForest.h"
+#include "Node.h"
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
 {	
@@ -58,7 +74,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
             mexErrMsgTxt("Train: Unexpected arguments.");
         return;
     }
-    // Test    
+
     if (!strcmp("Predict", cmd)) {
         // Check parameters
         if (nlhs != 1)

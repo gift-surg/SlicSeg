@@ -3,6 +3,8 @@ classdef ForestWrapper < handle
     %
     % For more information see Slic-Seg (Wang et al, 2016)
     %
+    % This mex interface is partly inspired by the Example MATLAB class wrapper by Oliver Woodford (see library/C___class_interface)
+    %
     % Author: Guotai Wang
     % Copyright (c) 2014-2016 University College London, United Kingdom. All rights reserved.
     % http://cmictig.cs.ucl.ac.uk
