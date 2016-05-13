@@ -50,6 +50,9 @@ classdef SlicSegAlgorithm < CoreBaseClass
     
     methods
         function obj = SlicSegAlgorithm()
+            % Compiles the necessary mex and cuda files
+            CompileSlicSeg;
+            
             % When these properties are changed, we invalidate the seed image and the segmentation results
             obj.AddPostSetListener(obj, 'volumeImage', @obj.ResetSeedAndSegmentationResultCallback);
             obj.AddPostSetListener(obj, 'orientation', @obj.ResetSeedAndSegmentationResultCallback);
