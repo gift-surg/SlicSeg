@@ -16,7 +16,7 @@
 // 
 
 #include "mex.h"
-#include "maxflow-v3.0/graph.h"
+#include "../maxflow/maxflow-v3.0/graph.h"
 #include <iostream>
 #include <cmath>
 #define   FOREGROUND_LABEL 127
