@@ -15,7 +15,7 @@ function SlicSegAddPaths(varargin)
     
     % This version number should be incremented whenever new paths are added to
     % the list
-    SlicSegAddPaths_Version_Number = 1;
+    SlicSegAddPaths_Version_Number = 2;
     
     % Persistent variable used to note that paths have already been set.
     % This stores the file versin number so that the paths will be re-added
@@ -34,6 +34,7 @@ function SlicSegAddPaths(varargin)
         path_folders{end + 1} = fullfile('gui');
         path_folders{end + 1} = fullfile('test');
         path_folders{end + 1} = fullfile('library', 'coremat');
+        path_folders{end + 1} = fullfile('library', 'dicomat');
         path_folders{end + 1} = fullfile('library', 'dwt');
         path_folders{end + 1} = fullfile('library', 'FeatureExtract');
         path_folders{end + 1} = fullfile('library', 'maxflow');
