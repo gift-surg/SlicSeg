@@ -1,9 +1,14 @@
-/*
- * ORForest.cpp
- *
- *  Created on: 17 Mar 2015
- *      Author: guotaiwang
- */
+// Online Random Forest
+//
+// This is a C++ file that is automatically compiled by the function CompileSlicSeg
+//
+// Author: Guotai Wang
+// Copyright (c) 2014-2016 University College London, United Kingdom. All rights reserved.
+// http://cmictig.cs.ucl.ac.uk
+//
+// Distributed under the BSD-3 licence. Please see the file licence.txt 
+// This software is not certified for clinical use.
+// 
 
 #include "ORForest.h"
 #include <iostream>
@@ -103,3 +108,15 @@ void ORForest::ConvertTreeToList(int * io_left, int * io_right,
         	io_splitFeature+i*maxNodeNumber, io_splitValue+i*maxNodeNumber);
 	}
 }
+
+const int ORForest::getTreeNumber() const
+{
+    return treeNumber;
+}
+
+const int ORForest::getMaxDepth() const
+{
+    return maxDepth;
+}
+
+
