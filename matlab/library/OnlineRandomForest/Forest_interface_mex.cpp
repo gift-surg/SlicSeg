@@ -16,7 +16,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
             mexErrMsgTxt("New: One output expected.");
         // Return a handle to a new C++ instance
         plhs[0] = convertPtr2Mat<ORForest>(new ORForest());
-//         plhs[0] = convertPtr2Mat<Forest>(&f);
         return;
     }
     
@@ -37,8 +36,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
     // Get the class instance pointer from the second input
     ORForest *rf_instance = convertMat2Ptr<ORForest>(prhs[1]);
     
-    // Call the various class methods
-    // Train(a,I);//I is a matrix for training    
     if (!strcmp("Init", cmd)) {
         // Check parameters
         int treeN=* mxGetPr(prhs[2]);
@@ -48,8 +45,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         rf_instance->Init(treeN,treeDepth,leastNsample);
         if (nlhs < 0 || nrhs < 2)
             mexErrMsgTxt("Train: Unexpected arguments.");
-        // Call the method
-        //dummy_instance->train();
         return;
     }
     if (!strcmp("Train", cmd)) {
@@ -61,8 +56,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         rf_instance->Train(TrainingSetPr,n,m);
         if (nlhs < 0 || nrhs < 2)
             mexErrMsgTxt("Train: Unexpected arguments.");
-        // Call the method
-        //dummy_instance->train();
         return;
     }
     // Test    
@@ -72,8 +65,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
             mexErrMsgTxt("New: One output expected.");
         // Call the method
         const mxArray *TestSet=prhs[2];
-        mwSize m=mxGetM(TestSet);// row number=featureNumber
-        mwSize n=mxGetN(TestSet);//column number=testing data number
+        mwSize m=mxGetM(TestSet); // row number=featureNumber
+        mwSize n=mxGetN(TestSet); // column number=testing data number
         double* TestSetPr=(double *)mxGetPr(TestSet);
         
         plhs[0] = mxCreateDoubleMatrix(n,1,mxREAL);
@@ -87,12 +80,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         if (nlhs != 4)
             mexErrMsgTxt("New: four output expected.");
         // Call the method
-//         const mxArray *TestSet=prhs[2];
-//         mwSize m=mxGetM(TestSet);// row number=featureNumber
-//         mwSize n=mxGetN(TestSet);//column number=testing data number
-//         double* TestSetPr=(double *)mxGetPr(TestSet);
-        int treeNumber=rf_instance->treeNumber;
-        int depth=rf_instance->maxDepth+1;
+        int treeNumber=rf_instance->getTreeNumber();
+        int depth=rf_instance->getMaxDepth()+1;
         int NodeNumber=pow(2,depth);
         plhs[0]=mxCreateNumericMatrix(NodeNumber, treeNumber,mxINT32_CLASS,mxREAL);
         plhs[1]=mxCreateNumericMatrix(NodeNumber, treeNumber,mxINT32_CLASS,mxREAL);
@@ -103,67 +92,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         int * splitFeature=(int *)mxGetPr(plhs[2]);
         double * splitValue = (double *)mxGetPr(plhs[3]);
         rf_instance->ConvertTreeToList(left,right,splitFeature,splitValue,NodeNumber);
-//         
-//         
-//         plhs[0] = mxCreateDoubleMatrix(n,1,mxREAL);
-//         double * prediction = (double *)mxGetPr(plhs[0]);
-//         rf_instance->Predict(TestSetPr,n,m,prediction);
         return;
     }
-//     if (!strcmp("GetMaxNodeOnTree", cmd)) {
-//         plhs[0]=mxCreateNumericMatrix(1,1,mxINT32_CLASS,mxREAL);
-//         int* tempPr=(int *)mxGetPr(plhs[0]);
-//         *tempPr=rf_instance->max_node_on_tree;
-//         return;
-//     }    
-//     if (!strcmp("GetLeftList", cmd)) {
-//         int treeNumber=rf_instance->treeNumber;
-//         int max_node_on_tree=rf_instance->max_node_on_tree;
-//         int arrayL=treeNumber*max_node_on_tree;
-//         plhs[0]=mxCreateNumericMatrix(arrayL,1,mxINT32_CLASS,mxREAL);
-//         int* leftListPr=(int *)mxGetPr(plhs[0]);
-//         for(int i=0;i<arrayL;i++)
-//         {
-//             leftListPr[i]=rf_instance->leftList[i];
-//         }
-//         return;
-//     } 
-//     if (!strcmp("GetRightList", cmd)) {
-//         int treeNumber=rf_instance->treeNumber;
-//         int max_node_on_tree=rf_instance->max_node_on_tree;
-//         int arrayL=treeNumber*max_node_on_tree;
-//         plhs[0]=mxCreateNumericMatrix(arrayL,1,mxINT32_CLASS,mxREAL);
-//         int* RightListPr=(int *)mxGetPr(plhs[0]);
-//         for(int i=0;i<arrayL;i++)
-//         {
-//             RightListPr[i]=rf_instance->rightList[i];
-//         }
-//         return;
-//     } 
-//     if (!strcmp("GetSplitFeatureList", cmd)) {
-//         int treeNumber=rf_instance->treeNumber;
-//         int max_node_on_tree=rf_instance->max_node_on_tree;
-//         int arrayL=treeNumber*max_node_on_tree;
-//         plhs[0]=mxCreateNumericMatrix(arrayL,1,mxINT32_CLASS,mxREAL);
-//         int* splitFeatureListPr=(int *)mxGetPr(plhs[0]);
-//         for(int i=0;i<arrayL;i++)
-//         {
-//             splitFeatureListPr[i]=rf_instance->splitFeatureList[i];
-//         }
-//         return;
-//     }
-//     if (!strcmp("GetSplitValueList", cmd)) {
-//         int treeNumber=rf_instance->treeNumber;
-//         int max_node_on_tree=rf_instance->max_node_on_tree;
-//         int arrayL=treeNumber*max_node_on_tree;
-//         plhs[0]=mxCreateDoubleMatrix(arrayL,1,mxREAL);
-//         double* splitValueListPr=(double *)mxGetPr(plhs[0]);
-//         for(int i=0;i<arrayL;i++)
-//         {
-//             splitValueListPr[i]=rf_instance->splitValueList[i];
-//         }
-//         return;
-//     }
     // Got here, so command not recognized
     mexErrMsgTxt("Command not recognized.");
 }

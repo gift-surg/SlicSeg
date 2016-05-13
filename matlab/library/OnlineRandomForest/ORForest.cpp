@@ -103,3 +103,15 @@ void ORForest::ConvertTreeToList(int * io_left, int * io_right,
         	io_splitFeature+i*maxNodeNumber, io_splitValue+i*maxNodeNumber);
 	}
 }
+
+const int ORForest::getTreeNumber() const
+{
+    return treeNumber;
+}
+
+const int ORForest::getMaxDepth() const
+{
+    return maxDepth;
+}
+
+
