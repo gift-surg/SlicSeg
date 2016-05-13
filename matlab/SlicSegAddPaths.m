@@ -1,7 +1,15 @@
 function SlicSegAddPaths(varargin)
+    % SlicSegAddPaths Set up paths for executing Slic-Seg
+    %
     % This script temporarily adds required paths to Matlab's path
     % To increase execution time, a persistent variable is used to record
     % if the paths have already been set
+    %
+    %
+    % Author: Tom Doel
+    % Distributed under the BSD-3 licence. Please see the file licence.txt 
+    % This software is not certified for clinical use.
+    %
     
     force = nargin > 0 && strcmp(varargin{1}, 'force');
     

@@ -8,6 +8,7 @@ function CompileSlicSeg(varargin)
     % Distributed under the BSD-3 licence. Please see the file licence.txt 
     % This software is not certified for clinical use.
     % Creating the CoreMex object will trigger compilation of mex and cuda files
+    %
     
     coreMexHandle = CoreMex(SlicSegGetMexFilesToCompile, CoreReporting(CoreProgressDialog, false, fullfile(CoreDiskUtilities.GetUserDirectory, 'slicseg.log')));
     

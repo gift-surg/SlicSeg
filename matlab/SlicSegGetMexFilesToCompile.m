@@ -2,9 +2,6 @@ function mex_files_to_compile_map = SlicSegGetMexFilesToCompile(~)
     % SlicSegGetMexFilesToCompile Returns a list of mex files used by Slic-Seg
     %
     % Author: Tom Doel
-    % Copyright (c) 2014-2016 University College London, United Kingdom. All rights reserved.
-    % http://cmictig.cs.ucl.ac.uk
-    %
     % Distributed under the BSD-3 licence. Please see the file licence.txt 
     % This software is not certified for clinical use.
     %
