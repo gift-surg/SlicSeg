@@ -23,6 +23,10 @@ classdef ImageSegUIController < CoreBaseClass
         imageAxes
         slicSeg
         mouseIsDown = false
+        reporting = CoreReportingDefault
+        propagateIndex = 0
+        stages = 1;
+        isPropagating = false
     end
 
     methods
@@ -68,16 +72,30 @@ classdef ImageSegUIController < CoreBaseClass
             
         function segment(obj)
             % Segment the current slice
+            obj.reporting.ShowProgress('Segmenting');
             obj.slicSeg.startIndex = obj.currentViewImageIndex;
             obj.slicSeg.seedImage = obj.labelImage;
             obj.slicSeg.StartSliceSegmentation();
             obj.showResult();            
+            obj.reporting.CompleteProgress();
         end
         
         function propagate(obj, minSlice, maxSlice)
             % Propagate segmentation to neighbouring slices
+            obj.reporting.ShowProgress('Propagating segmentation');
+            obj.isPropagating = true;
+            obj.propagateIndex = 0;
+            obj.stages = 1 + maxSlice - minSlice;
             obj.slicSeg.sliceRange = [minSlice, maxSlice];
-            obj.slicSeg.SegmentationPropagate();
+            try
+                obj.slicSeg.SegmentationPropagate();
+            catch ex
+                obj.isPropagating = false;
+                obj.reporting.CompleteProgress();
+                rethrow(ex);
+            end
+            obj.isPropagating = false;
+            obj.reporting.CompleteProgress();
         end
         
         function reset(obj)
@@ -148,6 +166,11 @@ classdef ImageSegUIController < CoreBaseClass
         end
         
         function sliceNumberChanged(obj, ~, ~, ~)
+            if obj.isPropagating
+                obj.propagateIndex = obj.propagateIndex + 1;
+                obj.reporting.UpdateProgressStage(obj.propagateIndex, obj.stages);
+            end
+            
             obj.showResult();
         end
     
