@@ -51,6 +51,10 @@ classdef SlicSegAlgorithm < CoreBaseClass
     
     methods
         function obj = SlicSegAlgorithm()
+            if gpuDeviceCount < 1
+                error('SlicSegAlgorithm:NoGpuFound', 'No suitable GPU card was found.');
+            end
+            
             % Compiles the necessary mex and cuda files
             CompileSlicSeg;
             
