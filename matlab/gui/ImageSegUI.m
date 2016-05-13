@@ -99,9 +99,10 @@ imageSegUIController.selectAndLoad();
 % Update the slice number and slider
 maxSliceNumber = imageSegUIController.getMaxSliceNumber;
 set(handles.text_totalslice,'String', ['Total number of slices: ' num2str(maxSliceNumber)]);
+set(handles.slider_imageIndex,'Value', max(1, min(maxSliceNumber, ceil(maxSliceNumber/2))));
 set(handles.slider_imageIndex,'Min', 1);
 set(handles.slider_imageIndex,'Max', maxSliceNumber);
-set(handles.slider_imageIndex,'SliderStep',[1/(maxSliceNumber-1) 1]);
+set(handles.slider_imageIndex,'SliderStep',[1/max(1, maxSliceNumber-1) 1]);
 
 
 % --- Executes on button press in pushbutton_selectForeground.
