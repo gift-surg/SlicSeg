@@ -1,3 +1,15 @@
+// wgtDWTConvolution
+//
+// This is a CUDA C++ file that is automatically compiled by the function CompileSlicSeg
+//
+// Author: Guotai Wang
+// Copyright (c) 2015-2016 University College London, United Kingdom. All rights reserved.
+// http://cmictig.cs.ucl.ac.uk
+//
+// Distributed under the BSD-3 licence. Please see the file licence.txt 
+// This software is not certified for clinical use.
+// 
+
 __device__ double getPixel(const double *array,int H,int W,int i,int j)
 {
     if(i<0 || i>=H || j<0 ||j>=W)
@@ -9,6 +21,7 @@ __device__ double getPixel(const double *array,int H,int W,int i,int j)
         return *(array+H*j+i);
     }
 }
+
 __device__ void setPixel(double *array,int H,int W,int i,int j,double value)
 {
     if(i<0 || i>=H || j<0 ||j>=W)
