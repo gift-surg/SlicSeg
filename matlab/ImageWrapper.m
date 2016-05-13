@@ -1,4 +1,15 @@
 classdef ImageWrapper < handle
+    % ImageWrapper A simple wrapper for abstracting 3D imaging data allowing 2D slice access 
+    %
+    % Author: Tom Doel
+    % Copyright (c) 2014-2016 University College London, United Kingdom. All rights reserved.
+    % http://cmictig.cs.ucl.ac.uk
+    %
+    % Distributed under the BSD-3 licence. Please see the file licence.txt 
+    % This software is not certified for clinical use.
+    % Creating the CoreMex object will trigger compilation of mex and cuda files
+    
+    
     properties
         rawImage
     end

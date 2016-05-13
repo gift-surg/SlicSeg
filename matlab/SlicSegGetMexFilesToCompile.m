@@ -1,14 +1,20 @@
 function mex_files_to_compile_map = SlicSegGetMexFilesToCompile(~)
     % SlicSegGetMexFilesToCompile Returns a list of mex files used by Slic-Seg
     %
+    % Author: Tom Doel
+    % Copyright (c) 2014-2016 University College London, United Kingdom. All rights reserved.
+    % http://cmictig.cs.ucl.ac.uk
+    %
+    % Distributed under the BSD-3 licence. Please see the file licence.txt 
+    % This software is not certified for clinical use.
     %
     
     % Populate list with known files
     files_to_compile = {};
     [mex_dir, ~, ~] = fileparts(mfilename('fullpath'));
     
-    % maxflow    
-    files_to_compile{end + 1} = CoreMexInfo(2, 'wgtmaxflowmex', 'cpp', fullfile(mex_dir, 'library', 'maxflow'), [], ...
+    % wgtmaxflow    
+    files_to_compile{end + 1} = CoreMexInfo(2, 'wgtmaxflowmex', 'cpp', fullfile(mex_dir, 'library', 'wgtmaxflow'), [], ...
         {fullfile(mex_dir, 'library', 'maxflow', 'maxflow-v3.0', 'graph.cpp'), fullfile(mex_dir, 'library', 'maxflow', 'maxflow-v3.0', 'maxflow.cpp')} ...
     );
 
@@ -32,6 +38,5 @@ function mex_files_to_compile_map = SlicSegGetMexFilesToCompile(~)
     for mex_file = files_to_compile
         mex_files_to_compile_map(mex_file{1}.Name) = mex_file{1};
     end
-    
     
 end

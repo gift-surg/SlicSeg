@@ -2,9 +2,11 @@ function HOGFeature = image2HOGFeature(I)
     % image2HOGFeature Constructs a HOG feature based on an input image
     %
     % Author: Guotai Wang
-    % Copyright (c) 2015-2016 University College London, United Kingdom. All rights reserved.
-    % Distributed under the BSD-3 licence. Please see the file licence.txt 
+    % Copyright (c) 2014-2016 University College London, United Kingdom. All rights reserved.
+    % http://cmictig.cs.ucl.ac.uk
     %
+    % Distributed under the BSD-3 licence. Please see the file licence.txt 
+    % This software is not certified for clinical use.
     
     [H, W] = size(I);
     gpuIin = gpuArray(I);

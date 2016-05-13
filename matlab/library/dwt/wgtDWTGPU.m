@@ -2,9 +2,11 @@ function dwt = wgtDWTGPU(I)
     % wgtDWTGPU
     %
     % Author: Guotai Wang
-    % Copyright (c) 2015-2016 University College London, United Kingdom. All rights reserved.
-    % Distributed under the BSD-3 licence. Please see the file licence.txt 
+    % Copyright (c) 2014-2016 University College London, United Kingdom. All rights reserved.
+    % http://cmictig.cs.ucl.ac.uk
     %
+    % Distributed under the BSD-3 licence. Please see the file licence.txt 
+    % This software is not certified for clinical use.
     
     [H, W] = size(I);
     k = parallel.gpu.CUDAKernel('wgtDWTConvolution.ptx', 'wgtDWTConvolution.cu', 'wgtDWTConvolution');
@@ -15,14 +17,14 @@ function dwt = wgtDWTGPU(I)
     gpuI = gpuArray(double(I));
     gpuLow_horizon1 = gpuArray(zeros(H, W));
     gpuHigh_horizon1 = gpuArray(zeros(H, W));
-    gpuLL1 = gpuArray(zeros(H, W));
+%     gpuLL1 = gpuArray(zeros(H, W));
     gpuLH1 = gpuArray(zeros(H, W));
     gpuHL1 = gpuArray(zeros(H, W));
     gpuHH1 = gpuArray(zeros(H, W));
 
     gpuLow_horizon1 = feval(k, gpuI, gpuLow_horizon1, H, W, 0, 1, true);
     gpuHigh_horizon1 = feval(k, gpuI, gpuHigh_horizon1, H, W, 1, 1, true);
-    gpuLL1 = feval(k, gpuLow_horizon1, gpuLL1, H, W, 0, 1, false);
+%     gpuLL1 = feval(k, gpuLow_horizon1, gpuLL1, H, W, 0, 1, false);
     gpuLH1 = feval(k, gpuLow_horizon1, gpuLH1, H, W, 1, 1, false);
     gpuHL1 = feval(k, gpuHigh_horizon1, gpuHL1, H, W, 0, 1, false);
     gpuHH1 = feval(k, gpuHigh_horizon1, gpuHH1, H, W, 1, 1, false);

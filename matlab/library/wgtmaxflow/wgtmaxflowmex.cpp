@@ -1,9 +1,19 @@
-//------------------------------------------------------------------------
-// guotai wang
-// guotai.wang.14@ucl.ac.uk
-// 9 Dec, 2014
-// max flow with possibility (based on random forest)
-//------------------------------------------------------------------------
+// wgtmaxflowmex: max flow with possibility (based on random forest)
+//
+// Syntax:
+//   [flow, label] = wgtmaxflowmex(I, Seeds, Prob, lambda, sigma);
+//
+// This is a C++ mex file that is automatically compiled by the function CompileSlicSeg
+//
+// Partly derived from maxflow by Michael Rubinstein, WDI R&D and IDC. See copyright and licensing information in the library/maxflow folder
+//
+// Author: Guotai Wang
+// Copyright (c) 2014-2016 University College London, United Kingdom. All rights reserved.
+// http://cmictig.cs.ucl.ac.uk
+//
+// Distributed under the BSD-3 licence. Please see the file licence.txt 
+// This software is not certified for clinical use.
+// 
 
 #include "mex.h"
 #include "maxflow-v3.0/graph.h"
@@ -13,7 +23,6 @@
 #define   BACKGROUND_LABEL 255
 using namespace std;
 
-// [flow label]=wgtmaxflowmex(I,Seeds,Prob,lambda,sigma);
 void mexFunction(int			nlhs, 		/* number of expected outputs */
 				 mxArray		*plhs[],	/* mxArray output pointer array */
 				 int			nrhs, 		/* number of inputs */
@@ -33,6 +42,7 @@ void mexFunction(int			nlhs, 		/* number of expected outputs */
     unsigned char * IPr=(unsigned char *)mxGetPr(I);
     unsigned char * SeedPr=(unsigned char *)mxGetPr(Seed);
     double * ProbPr=mxGetPr(Prob);
+    
 	// size of image
 	mwSize m = mxGetM(I);//height
 	mwSize n = mxGetN(I);//width
