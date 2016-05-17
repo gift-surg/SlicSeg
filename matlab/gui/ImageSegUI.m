@@ -105,6 +105,16 @@ set(handles.slider_imageIndex,'Max', maxSliceNumber);
 set(handles.slider_imageIndex,'SliderStep',[1/max(1, maxSliceNumber-1) 1]);
 
 
+% --- Executes on button press in pushbutton_loadImage.
+function pushbutton_save_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_loadImage (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Save the segmented the images
+global imageSegUIController
+imageSegUIController.save();
+
 % --- Executes on button press in pushbutton_selectForeground.
 function pushbutton_selectForeground_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton_solectForground (see GCBO)

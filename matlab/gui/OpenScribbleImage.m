@@ -1,5 +1,15 @@
  function seedImage = OpenScribbleImage(labelFileName)
-    % read scribbles in the start slice (*.png rgb file)
+    % SavePNGSegmentation Eead scribbles in the start slice (*.png rgb file)
+    % indexed from 1 to the number of slices.
+    %
+    % Author: Guotai Wang
+    % Copyright (c) 2014-2016 University College London, United Kingdom. All rights reserved.
+    % http://cmictig.cs.ucl.ac.uk
+    %
+    % Distributed under the BSD-3 licence. Please see the file licence.txt 
+    % This software is not certified for clinical use.
+    %  
+
     rgbLabel=imread(labelFileName);
     ISize=size(rgbLabel);
     ILabel=uint8(zeros(ISize(1),ISize(2)));

@@ -9,6 +9,7 @@ classdef ImageSegUIController < CoreBaseClass
     %
     % Distributed under the BSD-3 licence. Please see the file licence.txt 
     % This software is not certified for clinical use.
+    %
     
     properties
         leftMouseSelectsForeground = true
@@ -27,6 +28,8 @@ classdef ImageSegUIController < CoreBaseClass
         propagateIndex = 0
         stages = 1;
         isPropagating = false
+        currentMetaData
+        sliceLocations
     end
 
     methods
@@ -57,19 +60,45 @@ classdef ImageSegUIController < CoreBaseClass
             % which images will be loaded
             reset(obj.imageAxes);
             cla(obj.imageAxes);
-            [fileName, imgFolderName, ~] = uigetfile('*.png','select a file');
-            if fileName == 0
-                return
-            end
             obj.slicSeg.Reset();
-            obj.slicSeg.volumeImage = OpenPNGImage(imgFolderName);
+            [newImage, metaData, obj.sliceLocations] = ChooseImages();
+            if isempty(newImage)
+                return;
+            end
+            obj.currentMetaData = metaData;
+            obj.slicSeg.volumeImage = newImage;
             maxSliceNumber = obj.getMaxSliceNumber;
             currentSliceNumber = max(1, min(maxSliceNumber, round(maxSliceNumber/2)));
             imgSize = obj.slicSeg.volumeImage.getImageSize;
             obj.resetLabelImage(imgSize);
             obj.currentViewImageIndex = currentSliceNumber; % Note this will trigger a redraw
         end
+        
+        function save(obj)
+            % Save the current segmentation
             
+            if isempty(obj.slicSeg.segImage.rawImage)
+                return
+            end
+
+            [fileName, pathName, fileType] = obj.SaveImageDialogBox(~isempty(obj.currentMetaData));
+
+            [~, name, ~] = fileparts(fileName);
+            baseFilename = fullfile(pathName, name);
+            
+            if ~isequal(fileType,0) && ~isequal(fileName,0) && ~isequal(pathName,0)
+                obj.reporting.ShowProgress('Exporting segmentation');
+                switch fileType
+                    case 'dcm'
+                        SaveDicomSegmentation((obj.slicSeg.segImage.rawImage > 0), baseFilename, obj.currentMetaData, obj.sliceLocations, obj.reporting);
+                    case 'png'
+                        SavePNGSegmentation(obj.slicSeg.segImage, baseFilename, 3);
+                end
+                obj.reporting.CompleteProgress();
+            end
+            
+        end
+
         function segment(obj)
             % Segment the current slice
             obj.reporting.ShowProgress('Segmenting');
@@ -236,6 +265,47 @@ classdef ImageSegUIController < CoreBaseClass
                         iout(i,j,3)=255;
                     end
                 end
+            end
+        end
+        
+        function [fileName, pathName, fileType] = SaveImageDialogBox(obj, allowDicom)
+            persistent lastExportFolder
+            
+            fileType = 0;
+            
+            if allowDicom
+                filespec = {'*.dcm', 'DICOM (*.dcm)';
+                            '*.png', 'PNG (*.png)';
+                            };
+            else
+                filespec = {'*.png', 'PNG (*.png)';
+                            };
+            end
+
+            if isempty(lastExportFolder)
+                [fileName, pathName, filterIndex] = uiputfile(filespec, 'Save image as');
+            else
+                [fileName, pathName, filterIndex] = uiputfile(filespec, 'Save image as', fullfile(lastExportFolder, ''));
+            end
+            
+            if filterIndex == 0
+                return
+            end
+            
+            lastExportFolder = pathName;
+            
+            
+            if allowDicom
+                switch filterIndex
+                    case 1
+                        fileType = 'dcm';
+                    case 2
+                        fileType = 'png';
+                    otherwise
+                        fileType = [];
+                end
+            else
+                fileType = 'png';
             end
         end
     end
