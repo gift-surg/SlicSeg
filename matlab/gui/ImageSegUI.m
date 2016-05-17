@@ -73,6 +73,8 @@ glbHandles = handles;
 
 % Listen for slice number change callbacks
 addlistener(imageSegUIController, 'currentViewImageIndex', 'PostSet', @UpdateSliceNumber);
+addlistener(imageSegUIController, 'guiState', 'PostSet', @UpdateGuiState);
+UpdateGui(ImageSegUIState.NoImage);
 
 
 % --- Outputs from this function are returned to the command line.
@@ -238,4 +240,47 @@ function UpdateSliceNumber(eventSrc, eventData)
     set(glbHandles.text_currentslice, 'String', ['Current slice number: ' num2str(currentViewImageIndex)]);
 
 
-
+function UpdateGuiState(eventSrc, eventData)
+    % Callback for when the controller has entered a different state
+    UpdateGui(eventData.AffectedObject.guiState);
+    
+function UpdateGui(newState)
+    global glbHandles;
+    loaded = 'off';
+    fully = 'off';
+    if ~isempty(newState) && isa(newState, 'ImageSegUIState')
+        switch newState
+            case ImageSegUIState.NoImage
+                loaded = 'off';
+                segmented = 'off';
+                fully = 'off';
+            case ImageSegUIState.ImageLoaded
+                loaded = 'on';
+                segmented = 'off';
+                fully = 'off';
+            case ImageSegUIState.SliceSegmented
+                loaded = 'on';
+                segmented = 'on';
+                fully = 'off';
+            case ImageSegUIState.FullySegmented
+                loaded = 'on';
+                segmented = 'on';
+                fully = 'on';
+        end
+    end
+    
+    set(glbHandles.pushbutton_selectBackgound, 'Enable', loaded);
+    set(glbHandles.pushbutton_selectForground, 'Enable', loaded);
+    set(glbHandles.pushbutton_segment, 'Enable', loaded);
+    set(glbHandles.slider_imageIndex, 'Enable', loaded);
+    set(glbHandles.edit_max, 'Enable', loaded);
+    set(glbHandles.edit_min, 'Enable', loaded);
+    set(glbHandles.text_currentslice, 'Enable', loaded);
+    set(glbHandles.text13, 'Enable', loaded);
+    set(glbHandles.text14, 'Enable', loaded);
+    set(glbHandles.text_totalslice, 'Enable', loaded);
+    set(glbHandles.text_currentslice, 'Enable', loaded);
+    set(glbHandles.pushbutton_reload, 'Enable', loaded);
+    set(glbHandles.pushbutton_Propagate, 'Enable', segmented);
+    set(glbHandles.pushbutton_save, 'Enable', fully);
+    

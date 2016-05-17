@@ -17,6 +17,7 @@ classdef ImageSegUIController < CoreBaseClass
     
     properties (SetObservable)
         currentViewImageIndex % The currently displayed slice number
+        guiState  = ImageSegUIState.NoImage % The current state of the GUI
     end
     
     properties (Access = private)
@@ -63,6 +64,7 @@ classdef ImageSegUIController < CoreBaseClass
             obj.slicSeg.Reset();
             [newImage, metaData, obj.sliceLocations] = ChooseImages();
             if isempty(newImage)
+                obj.guiState = ImageSegUIState.NoImage;
                 return;
             end
             obj.currentMetaData = metaData;
@@ -72,6 +74,7 @@ classdef ImageSegUIController < CoreBaseClass
             imgSize = obj.slicSeg.volumeImage.getImageSize;
             obj.resetLabelImage(imgSize);
             obj.currentViewImageIndex = currentSliceNumber; % Note this will trigger a redraw
+            obj.guiState = ImageSegUIState.ImageLoaded;
         end
         
         function save(obj)
@@ -107,6 +110,7 @@ classdef ImageSegUIController < CoreBaseClass
             obj.slicSeg.StartSliceSegmentation();
             obj.showResult();            
             obj.reporting.CompleteProgress();
+            obj.guiState = ImageSegUIState.SliceSegmented;
         end
         
         function propagate(obj, minSlice, maxSlice)
@@ -125,6 +129,7 @@ classdef ImageSegUIController < CoreBaseClass
             end
             obj.isPropagating = false;
             obj.reporting.CompleteProgress();
+            obj.guiState = ImageSegUIState.FullySegmented;
         end
         
         function reset(obj)
@@ -132,7 +137,8 @@ classdef ImageSegUIController < CoreBaseClass
             obj.resetLabelImage(size(obj.labelImage));
             obj.slicSeg.ResetSegmentationResult();
             obj.slicSeg.ResetSeedPoints();
-            obj.showResult();            
+            obj.showResult();
+            obj.guiState = ImageSegUIState.ImageLoaded;
         end
         
         function set.currentViewImageIndex(obj, newSliceNumber)
