@@ -56,20 +56,23 @@ How to use
  
  * Switch to the `matlab` directory.
  
- * Run 'SlicSegAddPaths' to set up the paths for this session
+ * To launch the user interface, run `slicseg` on the command window
  
- * Run `slicseg` to launch the user interface. See below for how to use.
+ * Alternatively,  run the test script to illustrate use of the algorithm without the user interface. To do this:
+  * Run 'SlicSegAddPaths` to set up the paths for this session
+  * Type `test` in the command window
  
- * Alternatively,  run `test` to illustrate use of the algorithm without the user interface
+
+
  
  
- User interface
- --------------
+How to use the user interface
+----------------------------
   * Run `slicseg` to launch the user interface.
   * The mex and cuda files will automatically compile if they have not already been compiled. This will fail if you have not installed and correctly set up your mex and cuda compilers to work with Matlab.
   * Click `Load` to load Dicom or a series of png image from a directory you specify
   * Choose your starting slice (usually a slice in the middle of the object)
-  * Draw `Scribbles` (lines) over parts of the object you wish to segment. The left button selects the foreground (object) and the right button selects the background.
+  * Draw **scribbles** (lines) over parts of the object you wish to segment. The left button selects the foreground (object) and the right button selects the background.
     * The `Background` button makes the left button select background, while the `Foreground` button makes the left button select foreground
   * Click `Segment` to segment the object on this slice, based on the scribbes you have entered
   * Select the range (start and end slices) over which the segmentation will propagate
@@ -77,16 +80,17 @@ How to use
   * Click `Save` to save the segmentation
  
  
- Issues
- ------
+Issues
+------
  
   * The most likely issues will be due to not having correctly set up your mex and cuda compilers.
   * If you get compilation errors, please fix your mex and cuda compiler setup, then run `CompileSlicSeg recompile` on the command window to force re-compilation.
   
+
 Funding
 -------------
 
-This work was supported through an Innovative Engineering for Health award by the Wellcome Trust [WT101957], the [Engineering and Physical Sciences Research Council (EPSRC)][epsrc] [NS/A000027/1] and a [National Institute for Health Research][nihr] Biomedical Research Centre [UCLH][uclh]/UCL High Impact Initiative.
+This work was supported through an Innovative Engineering for Health award by the [Wellcome Trust][wellcometrust] [WT101957], the [Engineering and Physical Sciences Research Council (EPSRC)][epsrc] [NS/A000027/1] and a [National Institute for Health Research][nihr] Biomedical Research Centre [UCLH][uclh]/UCL High Impact Initiative.
 
 
 
@@ -106,6 +110,10 @@ Slic-Seg is a cross-platform Matlab/C++ library and officially supports:
 [nihr]: http://www.nihr.ac.uk/research
 [uclh]: http://www.uclh.nhs.uk
 [epsrc]: http://www.epsrc.ac.uk
+[wellcometrust]: http://www.wellcome.ac.uk
+[maxflow]: http://uk.mathworks.com/matlabcentral/fileexchange/21310-maxflow
+[coremat]: http://github.com/tomdoel/coremat
+[dicomat]: http://github.com/tomdoel/dicomat
 [citation]: http://www.sciencedirect.com/science/article/pii/S1361841516300287
 [SlicSegHome]: https://cmiclab.cs.ucl.ac.uk/GIFT-Surg/SlicSeg
 [githubhome]: https://github.com/gift-surg/SlicSeg
