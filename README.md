@@ -19,15 +19,15 @@ Disclaimer
 Software links
 --------------
 
- - [SlicSeg home page][SlicSegHome].
- - [GitHub mirror][https://github.com/gift-surg/SlicSeg].
+ - [Slic-Seg home page][SlicSegHome].
+ - [GitHub mirror][githubhome].
 
 License
 -----------
 
 Copyright (c) 2014-2016, [University College London][ucl].
 
-SlicSeg is available as free open-source software under a BSD 3-Clause License.
+Slic-Seg is available as free open-source software under a BSD 3-Clause License.
 Other licenses may apply for dependencies:
  - [Maxflow][maxflow] by Michael Rubinstein uses the BSD 2-Clause License
  - [CoreMat][coremat] by Tom Doel uses the MIT License
