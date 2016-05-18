@@ -1,3 +1,15 @@
+// getMeanStdInRegion
+//
+// This is a CUDA C++ file that is automatically compiled by the function CompileSlicSeg
+//
+// Author: Guotai Wang
+// Copyright (c) 2014-2016 University College London, United Kingdom. All rights reserved.
+// http://cmictig.cs.ucl.ac.uk
+//
+// Distributed under the BSD-3 licence. Please see the file licence.txt 
+// This software is not certified for clinical use.
+// 
+
 __device__ double getPixel(const double *array,int H,int W,int i,int j)
 {
     if(i<0 || i>=H || j<0 ||j>=W)
@@ -42,13 +54,10 @@ __global__ void wgtDWTMeanStd(const double * dwt,double *outputMean,double *outp
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     if(x>=H) return;
-    //int y = blockIdx.y * blockDim.y + threadIdx.y;
     int size=8;
     int halfSize=size/2;
     int quaterSize=size/4;
-    //double LL2mean,LH2mean,HL2mean,HH2mean,LH1mean,HL1mean,HH1mean;
     double tempMean[7];
-    //double LL2std,LH2std,HL2std,HH2std,LH1std,HL1std,HH1std;
     double tempStd[7];
 
     getMeanStdInRegion(dwt,H,W,x,size,0,0,quaterSize,quaterSize,&tempMean[0],&tempStd[0]);//LL2

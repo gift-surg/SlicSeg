@@ -1,3 +1,15 @@
+// wgtDWTFeature
+//
+// This is a CUDA C++ file that is automatically compiled by the function CompileSlicSeg
+//
+// Author: Guotai Wang
+// Copyright (c) 2014-2016 University College London, United Kingdom. All rights reserved.
+// http://cmictig.cs.ucl.ac.uk
+//
+// Distributed under the BSD-3 licence. Please see the file licence.txt 
+// This software is not certified for clinical use.
+// 
+
 __device__ double getPixel(const double *array,int H,int W,int i,int j)
 {
     if(i<0 || i>=H || j<0 ||j>=W)
@@ -18,8 +30,6 @@ __device__ void setPixel(double *array,int H,int W,int i,int j,double value)
     *(array+H*j+i)=value;
 }
 
-//feval(k,gpuLL2,gpuLH2,gpuHL2,gpuHH2,gpuLH1,gpuHL1,gpuHH1,gpuDWT,H,W);
-// size of FeatureMatrix: (H*W)*featureLength
 __global__ void wgtDWTFeature(const double * pDataLL2, const double * pDataLH2,
 	const double * pDataHL2, const double * pDataHH2,
     const double * pDataLH1, const double * pDataHL1,
