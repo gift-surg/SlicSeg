@@ -92,7 +92,10 @@ classdef SlicSegAlgorithm < CoreBaseClass
             seedLabels = obj.GetSeedLabelImage();
             currentSegIndex = obj.startIndex;
             volumeSlice = obj.volumeImage.get2DSlice(currentSegIndex, obj.orientation);
-            obj.Train(seedLabels, volumeSlice);
+            trained = obj.Train(seedLabels, volumeSlice);
+            if(~trained)
+                error('Please add more scribbles to create an appropriate training set');
+            end
             P0 = obj.Predict(volumeSlice);
             probabilitySlice = SlicSegAlgorithm.ProbabilityProcessUsingConnectivity(seedLabels, P0, volumeSlice);
             segmentationSlice = SlicSegAlgorithm.GetSingleSliceSegmentation(seedLabels, volumeSlice, probabilitySlice, obj.lambda, obj.sigma);            
@@ -161,18 +164,20 @@ classdef SlicSegAlgorithm < CoreBaseClass
     end
     
     methods (Access=private)
-        function Train(obj, currentTrainLabel, volumeSlice)
+        function trained = Train(obj, currentTrainLabel, volumeSlice)
             % train the random forest using scribbles in on slice
             
             featureMatrix = image2FeatureMatrix(volumeSlice);
-            if(isempty(currentTrainLabel) || isempty(find(currentTrainLabel>0)))
-                error('the training set is empty');
+            if(isempty(currentTrainLabel) || ~any(currentTrainLabel(:)>0))
+                trained = false;
+                return
             end
             foreground=find(currentTrainLabel==127);
             background=find(currentTrainLabel==255);
             totalseeds=length(foreground)+length(background);
             if(totalseeds==0)
-                error('the training set is empty');
+                trained = false;
+                return
             end
             TrainingSet=zeros(totalseeds,size(featureMatrix,2));
             TrainingLabel=zeros(totalseeds,1);
@@ -182,6 +187,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
             TrainingLabel(length(foreground)+1:length(foreground)+length(background))=0;
             TrainingDataWithLabel=[TrainingSet,TrainingLabel];
             obj.getRandomForest.Train(TrainingDataWithLabel');
+            trained = true;
         end
         
         function randomForest = getRandomForest(obj)
