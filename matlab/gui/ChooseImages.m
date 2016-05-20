@@ -26,6 +26,10 @@ function [loadedImage, representativeMetadata, sliceLocations] = ChooseImages
     % Store the last selcted folder during this session, so that the select folder dialog goes there automatically
     persistent lastLoadedFolder
     
+    loadedImage = [];
+    representativeMetadata = [];
+    sliceLocations = [];
+    
     % If this is the first time this is run, then we start at the user's
     % home directory
     if isempty(lastLoadedFolder)
@@ -37,7 +41,6 @@ function [loadedImage, representativeMetadata, sliceLocations] = ChooseImages
     
     % If cancel is selected, return an empty image
     if isempty(importDir)
-        loadedImage = [];
         return
     end
     
@@ -52,7 +55,11 @@ function [loadedImage, representativeMetadata, sliceLocations] = ChooseImages
     if isempty(pngFileNames)
         
         % Load the largest image series from Dicom files
-        [imageWrapper, representativeMetadata, ~, ~, sliceLocations] = DMFindAndLoadMainImageFromDicomFiles(importDir);
+        try
+            [imageWrapper, representativeMetadata, ~, ~, sliceLocations] = DMFindAndLoadMainImageFromDicomFiles(importDir);
+        catch ex
+            return
+        end
         
         % Extract the image from its wrapper
         loadedImage = imageWrapper.RawImage;
