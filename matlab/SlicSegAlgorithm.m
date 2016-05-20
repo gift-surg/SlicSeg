@@ -134,7 +134,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
         function Reset(obj)
             % Resets the random forest and results
             obj.randomForest = [];
-            obj.volumeImage = ImageWrapper();
+            obj.volumeImage = [];
             obj.ResetSegmentationResult();
             obj.ResetSegmentationResult();
         end
