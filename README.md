@@ -51,6 +51,7 @@ How to use
  * Before attempting to use Slic-Seg, please ensure you have C++ and CUDA compilers installed and correctly configured to work with Matlab
    * [What you need to build mex files](http://uk.mathworks.com/help/matlab/matlab_external/what-you-need-to-build-mex-files.html)
    * [CUDA Installation guides](http://docs.nvidia.com/cuda/index.html#installation-guides)
+   * [Why can't MEX find a supported compiler in MATLAB R2015b after I upgraded to Xcode 7.0?](http://uk.mathworks.com/matlabcentral/answers/246507-why-can-t-mex-find-a-supported-compiler-in-matlab-r2015b-after-i-upgraded-to-xcode-7-0)
 
  * GPU computing may lead to system instability and data loss. Please back up any valuable data before using the software.
  
@@ -85,6 +86,9 @@ Issues
  
   * The most likely issues will be due to not having correctly set up your mex and cuda compilers.
   * If you get compilation errors, please fix your mex and cuda compiler setup, then run `CompileSlicSeg recompile` on the command window to force re-compilation.
+  * If you are using OSX and receive a `No supported compiler or SDK was found` error, and you have already installed XCode, please [follows these instructions](   * [Why can't MEX find a supported compiler in MATLAB R2015b after I upgraded to Xcode 7.0?](http://uk.mathworks.com/matlabcentral/answers/246507-why-can-t-mex-find-a-supported-compiler-in-matlab-r2015b-after-i-upgraded-to-xcode-7-0)
+)
+  
   
 
 Funding
