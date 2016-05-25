@@ -107,6 +107,8 @@ Slic-Seg is a cross-platform Matlab/C++ library and officially supports:
  - Windows
  - MacOS X
  - Linux
+ 
+ Appropriate versions of Matlab with compatible C++ and CUDA compilers must be installed.
 
 [tig]: http://cmictig.cs.ucl.ac.uk
 [giftsurg]: http://www.gift-surg.ac.uk
