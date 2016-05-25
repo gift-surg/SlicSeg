@@ -7,6 +7,7 @@ Slic-Seg is a minimally interactive online learning-based segmentation method. A
 
 Slic-Seg was developed as part of the [GIFT-Surg][giftsurg] project. The algorithm and software were developed by Guotai Wang at the [Translational Imaging Group][tig] in the [Centre for Medical Image Computing][cmic] at [University College London (UCL)][ucl].
 
+Algorithm and code by Guotai Wang.
 If you use this software, please cite [this paper][citation]. 
 
 
