@@ -86,7 +86,7 @@ Issues
  
   * The most likely issues will be due to not having correctly set up your mex and cuda compilers.
   * If you get compilation errors, please fix your mex and cuda compiler setup, then run `CompileSlicSeg recompile` on the command window to force re-compilation.
-  * OSX users, please check the [supported versions of XCode](http://docs.nvidia.com/cuda/cuda-installation-guide-mac-os-x/index.html#abstract)
+  * OSX users, please check the [supported versions of XCode](http://docs.nvidia.com/cuda/cuda-installation-guide-mac-os-x/index.html#abstract). Note that NVIDIA CUDA may not support the latest versions of XCode.
   * If you are using OSX and receive a `No supported compiler or SDK was found` error, and you have already installed XCode, please [follows these instructions](   * [Why can't MEX find a supported compiler in MATLAB R2015b after I upgraded to Xcode 7.0?](http://uk.mathworks.com/matlabcentral/answers/246507-why-can-t-mex-find-a-supported-compiler-in-matlab-r2015b-after-i-upgraded-to-xcode-7-0)
 )
   
