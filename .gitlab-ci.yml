@@ -1,0 +1,30 @@
+variables:
+  CI_SCRIPTS_DIR: "./ci"
+
+gift-gala:
+  script:
+    - "$CI_SCRIPTS_DIR/test-mac.sh"
+  tags:
+    - gift-gala
+    - gift-mac
+    - matlab
+    - cuda
+
+gift-adelie:
+  script:
+    - "$CI_SCRIPTS_DIR/test-linux.sh"
+  tags:
+    - gift-adelie
+    - gift-linux
+    - matlab
+    - cuda
+
+gift-jalousie:
+  script:
+    - "call .\\ci\\test-win.bat"
+  tags:
+    - gift-jalousie
+    - gift-win
+    - matlab
+    - cuda
+
