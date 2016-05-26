@@ -1,6 +1,5 @@
 #!/bin/bash
-/Applications/MATLAB_R2015b.app/bin/matlab -nodisplay -nosplash -nodesktop -r "try, run('$(pwd)/matlab/CIBuildAndTest.m'), catch, exit(1), end, exit(0); "
-#mvn install -B
+/Applications/MATLAB_R2015b.app/bin/matlab -nodisplay -nosplash -nodesktop -r "try, run('$(pwd)/matlab/CIBuildAndTest.m'), catch ex, disp(['Exception during CIBuildAndTest.m: ' ex.message]), exit(1), end, exit(0); "
 if [ $? -eq 0 ]; then
 	echo "Success running CIBuildAndTest.m"
 	exit 0;
