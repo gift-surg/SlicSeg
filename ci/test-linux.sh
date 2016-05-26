@@ -6,5 +6,5 @@ if [ $? -eq 0 ]; then
 	exit 0;
 else
 	echo "Failure running CIBuildAndTest.m"
-	echo 1;
+	exit 1;
 fi
