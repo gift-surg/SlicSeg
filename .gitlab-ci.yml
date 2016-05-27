@@ -19,12 +19,3 @@ gift-adelie:
     - matlab
     - cuda
 
-gift-jalousie:
-  script:
-    - "call .\\ci\\test-win.bat"
-  tags:
-    - gift-jalousie
-    - gift-win
-    - matlab
-    - cuda
-

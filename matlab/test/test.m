@@ -11,4 +11,6 @@ slicSeg.seedImage = OpenScribbleImage(fullfile(imageFilepath, 'a23_05', '22_seed
 slicSeg.startIndex = 22;
 slicSeg.sliceRange = [5,38];
 slicSeg.RunSegmention();
-SavePNGSegmentation(slicSeg.segImage, fullfile(imageFilepath, 'a23_05', 'seg'), 3);
+tempDir = fullfile(tempdir(), 'a23_05');
+mkdir(tempDir);
+SavePNGSegmentation(slicSeg.segImage, fullfile(tempDir, 'seg'), 3);
