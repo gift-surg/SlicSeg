@@ -90,7 +90,9 @@ Issues
   * OSX users, please check the [supported versions of XCode](http://docs.nvidia.com/cuda/cuda-installation-guide-mac-os-x/index.html#abstract). Note that NVIDIA CUDA may not support the latest versions of XCode.
   * If you are using OSX and receive a `No supported compiler or SDK was found` error, and you have already installed XCode, please [follows these instructions](   * [Why can't MEX find a supported compiler in MATLAB R2015b after I upgraded to Xcode 7.0?](http://uk.mathworks.com/matlabcentral/answers/246507-why-can-t-mex-find-a-supported-compiler-in-matlab-r2015b-after-i-upgraded-to-xcode-7-0)
 )
-  
+
+  * On linux, linking problems may occur due to Matlab adding an internal linking path before `mex` is called. If you get version problems when linking C++ files you can force Matlab to find specific library versions using LD_PRELOAD, for example:
+    ```LD_PRELOAD=/path-to-desired-library/libstdc++.so.6 /path-to-matlab/bin/matlab```   
   
 
 Funding
@@ -103,13 +105,25 @@ This work was supported through an Innovative Engineering for Health award by th
 Supported Platforms
 -----------------------------
 
-Slic-Seg is a cross-platform Matlab/C++ library and officially supports:
+Slic-Seg is a cross-platform Matlab/C++ library. We have tested Slic-Seg on the following platforms:
 
- - Windows
- - MacOS X
  - Linux
+  - Ubuntu Desktop 14.04.3 LTS 64-bit
+  - NVIDIA 12GB GTX TITAN X
+  - CUDA 7.5
+  - Matlab R2015b
  
- Appropriate versions of Matlab with compatible C++ and CUDA compilers must be installed.
+ - MacOS X
+  - OS X Yosemite 10.10.5
+  - NVIDIA GeForce GT 750M 1024 MB
+  - XCode 7.2.1
+  - CUDA 7.5
+ 
+ - Windows
+  - Not yet tested
+
+
+Please note that NVIDA CUDA drivers and Matlab have specific compatibility requirements regarding C++ compilers
 
 [tig]: http://cmictig.cs.ucl.ac.uk
 [giftsurg]: http://www.gift-surg.ac.uk
