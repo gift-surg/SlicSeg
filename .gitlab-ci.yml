@@ -21,7 +21,7 @@ gift-adelie:
 
 gift-skylight:
   script:
-	- set PATH=%PATH%;C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin
+    - set PATH=%PATH%;C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin
     - "call .\\ci\\test-win.bat"
   tags:
     - gift-skylight
