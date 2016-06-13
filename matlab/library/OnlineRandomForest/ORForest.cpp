@@ -83,8 +83,10 @@ void ORForest::Train(const double *i_trainData, int i_Ns,int i_Nfp1)
 
 void ORForest::Predict(const double *i_testData, const int i_Ns, const int i_Nf, double *o_predict)
 {
-	double tempPredict[i_Ns];
-	for(int i=0;i<treeNumber;i++)
+    double *tempPredict;
+    tempPredict = new double[i_Ns];
+
+    for(int i=0;i<treeNumber;i++)
 	{
 		tree[i].Predict(i_testData, i_Ns, i_Nf,tempPredict);
 		for(int i=0;i<i_Ns;i++)
@@ -92,6 +94,8 @@ void ORForest::Predict(const double *i_testData, const int i_Ns, const int i_Nf,
 			o_predict[i]+=tempPredict[i];
 		}
 	}
+    delete [] tempPredict;     
+
 	for(int i=0;i<i_Ns;i++)
 	{
 		o_predict[i]=o_predict[i]/treeNumber;
