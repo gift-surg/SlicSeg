@@ -271,6 +271,7 @@ function cuda_compiler = GetCudaCompiler
                 cuda_compiler = TryToFindCudaCompilerPc(fullfile(getenv('ProgramFiles(x86)'), 'NVIDIA GPU Computing Toolkit', 'CUDA'));
             end
         end
+        cuda_compiler = CoreTextUtilities.RemoveNonprintableCharacters(cuda_compiler);
     else
         [status, cuda_compiler] = system('which nvcc');
 
