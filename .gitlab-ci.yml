@@ -19,3 +19,12 @@ gift-adelie:
     - matlab
     - cuda
 
+gift-skylight:
+  script:
+    - "call .\\ci\\test-win.bat"
+  tags:
+    - gift-skylight
+    - gift-win64
+    - matlab
+    - cuda
+
