@@ -8,13 +8,23 @@ Slic-Seg is a minimally interactive online learning-based segmentation method. A
 Slic-Seg was developed as part of the [GIFT-Surg][giftsurg] project. The algorithm and software were developed by Guotai Wang at the [Translational Imaging Group][tig] in the [Centre for Medical Image Computing][cmic] at [University College London (UCL)][ucl].
 
 Algorithm and code by Guotai Wang.
+
 If you use this software, please cite [this paper][citation]. 
+
+
+How to cite
+----------
+
+If you use this software, please cite [this paper][citation].
+
+Slic-Seg: A minimally interactive segmentation of the placenta from sparse and motion-corrupted fetal MRI in multiple views
+Guotai Wang, Maria A. Zuluaga, Rosalind Pratt, Michael Aertsen, Tom Doel, Maria Klusmann, Anna L. David, Jan Deprest, Tom Vercauteren, Sébastien Ourselin
 
 
 Disclaimer
 ----------
 
- * This is PROTOTYPE software and may lead to system instability and crashes which could result in data loss.
+ * This is PROTOTYPE software. Due to the low-level GPU computation there is a risk of system instability and crashes which could result in data loss.
 
 
 Software links
@@ -44,6 +54,34 @@ The current version of Slic-Seg requries:
  * Matlab Image Processing Toolbox (if files are to be loaded from DICOM)
  * A Matlab-supported C++ compiler installed and configured to work with mex files [see here](http://uk.mathworks.com/help/matlab/matlab_external/what-you-need-to-build-mex-files.html)
  * [The CUDA toolkit](https://developer.nvidia.com/cuda-toolkit) to be installed and configured to work with Matlab
+
+Please note that there are cross-dependencies between Matlab, CUDA, C++ and the OS. Please see below for the platforms and versions we have tested against.
+
+
+Supported Platforms
+-----------------------------
+
+Slic-Seg is a cross-platform Matlab/C++ library. We have tested Slic-Seg on the following platforms:
+
+ - Linux
+  - Ubuntu Desktop 14.04.3 LTS 64-bit
+  - NVIDIA 12GB GTX TITAN X
+  - CUDA 7.5
+  - Matlab R2015b
+ 
+ - MacOS X
+  - OS X Yosemite 10.10.5
+  - NVIDIA GeForce GT 750M 1024 MB
+  - XCode 7.2.1
+  - CUDA 7.5
+  - Matlab 2015b 64-bit
+ 
+ - Windows
+  - Windows 10 Professional 64-bit (NOTE: Matlab does not support GPU operations on 32-bit Windows)
+  - 2GB NVIDIA Quadro 4000
+  - Visual Studio 2013 Community Edition (NOTE: CUDA does not support Visual Studio 2015 or gcc)
+  - CUDA 7.5
+  - Matlab 2015b 64-bit
 
 
 How to use
@@ -102,25 +140,8 @@ This work was supported through an Innovative Engineering for Health award by th
 
 
 
-Supported Platforms
------------------------------
 
-Slic-Seg is a cross-platform Matlab/C++ library. We have tested Slic-Seg on the following platforms:
-
- - Linux
-  - Ubuntu Desktop 14.04.3 LTS 64-bit
-  - NVIDIA 12GB GTX TITAN X
-  - CUDA 7.5
-  - Matlab R2015b
- 
- - MacOS X
-  - OS X Yosemite 10.10.5
-  - NVIDIA GeForce GT 750M 1024 MB
-  - XCode 7.2.1
-  - CUDA 7.5
- 
- - Windows
-  - Not yet tested
+  
 
 
 Please note that NVIDA CUDA drivers and Matlab have specific compatibility requirements regarding C++ compilers
