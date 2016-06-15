@@ -22,7 +22,7 @@ public:
 	~ ORForest();
 	void Init(int Ntree, int treeDepth, int leastNsampleForSplit);
 	void Train(const double *i_trainData, int i_Ns,int i_Nfp1);
-	void Predict(const double *i_testData, int i_Ns, int i_Nf, double *o_predict);
+	void Predict(const double *i_testData, const int i_Ns, const int i_Nf, double *o_predict);
     void ConvertTreeToList(int * io_left, int * io_right, 
         int *io_splitFeature, double *io_splitValue, 
         int maxNodeNumber);
