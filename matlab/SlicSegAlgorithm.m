@@ -332,7 +332,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
         
         function [currentSeedLabel, currentTrainLabel] = getSeedLabels(currentSegImage, fgr, bgr)
             % generate new training data (for random forest) and new seeds
-            % (hard constraint for max-flow) based on segmentation in last slice
+            % (hard constraint for max-flow) based on segmentation in the last slice
             
             tempSegLabel=currentSegImage;
             fgSe1=strel('disk',fgr);
