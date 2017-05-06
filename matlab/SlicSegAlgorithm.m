@@ -46,8 +46,9 @@ classdef SlicSegAlgorithm < CoreBaseClass
     end
     
     properties (Access = private)
-        randomForest1       % Using two Random Forests for propagating towards two directions
-        randomForest2       % This makes segmentation faster than using a single Random Forest
+        randomForest_foreward        % Using two Random Forests for propagating towards two directions
+        randomForest_backward       % This makes segmentation faster than using a single Random Forest
+        propagate_direction
     end
     
     methods
@@ -93,12 +94,14 @@ classdef SlicSegAlgorithm < CoreBaseClass
             seedLabels = obj.GetSeedLabelImage();
             currentSegIndex = obj.startIndex;
             volumeSlice = obj.volumeImage.get2DSlice(currentSegIndex, obj.orientation);
-            trained = obj.Train(seedLabels, volumeSlice, 1);
-            trained = obj.Train(seedLabels, volumeSlice, 2);
+            obj.propagate_direction = 1;
+            trained = obj.Train(seedLabels, volumeSlice);
+            obj.propagate_direction = 2;
+            trained = obj.Train(seedLabels, volumeSlice);
             if(~trained)
                 error('Please add more scribbles to create an appropriate training set');
             end
-            P0 = obj.Predict(volumeSlice, 1);
+            P0 = obj.Predict(volumeSlice);
             probabilitySlice = SlicSegAlgorithm.ProbabilityProcessUsingConnectivity(seedLabels, P0, volumeSlice);
             segmentationSlice = SlicSegAlgorithm.GetSingleSliceSegmentation(seedLabels, volumeSlice, probabilitySlice, obj.lambda, obj.sigma);            
             obj.UpdateResults(currentSegIndex, segmentationSlice, probabilitySlice);
@@ -123,23 +126,26 @@ classdef SlicSegAlgorithm < CoreBaseClass
             
             % Propagate backwards from the initial slice
             priorSegIndex = obj.startIndex;
+            obj.propagate_direction = 1;
             for currentSegIndex = obj.startIndex-1 : -1 : minSlice
-                obj.PropagateAndTrain(currentSegIndex, priorSegIndex, 1);
+                obj.PropagateAndTrain(currentSegIndex, priorSegIndex);
                 priorSegIndex=currentSegIndex;
             end
             
             % Propagate forwards from the initial slice
             priorSegIndex = obj.startIndex;
+            obj.propagate_direction = 2;
             for currentSegIndex = obj.startIndex+1 : maxSlice
-                obj.PropagateAndTrain(currentSegIndex, priorSegIndex, 2);
+                obj.PropagateAndTrain(currentSegIndex, priorSegIndex);
                 priorSegIndex=currentSegIndex;
             end
         end
         
         function Reset(obj)
             % Resets the random forest and results
-            obj.randomForest1 = [];
-            obj.randomForest2 = [];
+            obj.randomForest_foreward = [];
+            obj.randomForest_backward = [];
+            obj.propagate_direction = [];
             obj.volumeImage = [];
             obj.ResetSegmentationResult();
             obj.ResetSegmentationResult();
@@ -167,7 +173,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
     end
     
     methods (Access=private)
-        function trained = Train(obj, currentTrainLabel, volumeSlice, rf)
+        function trained = Train(obj, currentTrainLabel, volumeSlice)
             % train the random forest using scribbles in on slice
             featureMatrix = image2FeatureMatrix(volumeSlice);
             if(isempty(currentTrainLabel) || ~any(currentTrainLabel(:)>0))
@@ -188,31 +194,27 @@ classdef SlicSegAlgorithm < CoreBaseClass
             TrainingSet(length(foreground)+1:length(foreground)+length(background),:)=featureMatrix(background,:);
             TrainingLabel(length(foreground)+1:length(foreground)+length(background))=0;
             TrainingDataWithLabel=[TrainingSet,TrainingLabel];
-            if(rf == 1)
-                obj.getRandomForest1.Train(TrainingDataWithLabel');
-            else
-                obj.getRandomForest2.Train(TrainingDataWithLabel');
-            end
+            obj.getRandomForest.Train(TrainingDataWithLabel');
             trained = true;
         end
         
-        function randomForest = getRandomForest1(obj)
-            if isempty(obj.randomForest1)
-                obj.randomForest1 = ForestWrapper();
-                obj.randomForest1.Init(20,8,20);        
+        function randomForest = getRandomForest(obj)
+            if isempty(obj.randomForest_foreward)
+                obj.randomForest_foreward = ForestWrapper();
+                obj.randomForest_foreward.Init(20,8,20);        
             end
-            randomForest = obj.randomForest1;
+            if isempty(obj.randomForest_backward)
+                obj.randomForest_backward = ForestWrapper();
+                obj.randomForest_backward.Init(20,8,20);        
+            end
+            if (obj.propagate_direction == 1)
+                randomForest = obj.randomForest_foreward;
+            else
+                randomForest = obj.randomForest_backward;
+            end
         end
         
-        function randomForest = getRandomForest2(obj)
-            if isempty(obj.randomForest2)
-                obj.randomForest2 = ForestWrapper();
-                obj.randomForest2.Init(20,8,20);        
-            end
-            randomForest = obj.randomForest2;
-        end
-        
-        function PropagateAndTrain(obj, currentSegIndex, priorSegIndex, rf)
+        function PropagateAndTrain(obj, currentSegIndex, priorSegIndex)
             % Get prediction for current slice using previous slice segmentation as a prior
             currentVolumeSlice = obj.volumeImage.get2DSlice(currentSegIndex, obj.orientation);
             priorSegmentedSlice = obj.segImage.get2DSlice(priorSegIndex, obj.orientation);
@@ -220,7 +222,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
             % use roi to crop the image to save runtime
             roi = SlicSegAlgorithm.GetSegmentationROI(priorSegmentedSlice);
             roiCurrentSlice = currentVolumeSlice(roi(1):roi(2),roi(3):roi(4));
-            roiP0 = obj.Predict(roiCurrentSlice, rf);
+            roiP0 = obj.Predict(roiCurrentSlice);
             roiPriorSegSlice = priorSegmentedSlice(roi(1):roi(2),roi(3):roi(4));
             roiProbSlice = SlicSegAlgorithm.ProbabilityProcessUsingShapePrior(roiP0, roiPriorSegSlice);
 
@@ -230,7 +232,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
             
             % Further train the algorithm based on the newly segmented slice
             [~, currentTrainLabel] = SlicSegAlgorithm.getSeedLabels(roiSegSlice, obj.innerDis, obj.outerDis);                
-            obj.Train(currentTrainLabel, roiCurrentSlice, rf);
+            obj.Train(currentTrainLabel, roiCurrentSlice);
             
             % Update the output images
             segmentationSlice = zeros(size(priorSegmentedSlice));
@@ -268,13 +270,9 @@ classdef SlicSegAlgorithm < CoreBaseClass
             obj.ResetSegmentationResult();
         end
         
-        function P0 = Predict(obj, volumeSlice, rf)
+        function P0 = Predict(obj, volumeSlice)
             featureMatrix = image2FeatureMatrix(volumeSlice);
-            if(rf == 1)
-                Prob = obj.getRandomForest1.Predict(featureMatrix');
-            else
-                Prob = obj.getRandomForest2.Predict(featureMatrix');
-            end
+            Prob = obj.getRandomForest.Predict(featureMatrix');
             P0 = reshape(Prob, size(volumeSlice,1), size(volumeSlice,2));
         end
     end
