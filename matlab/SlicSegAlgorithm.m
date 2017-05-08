@@ -24,8 +24,6 @@ classdef SlicSegAlgorithm < CoreBaseClass
     
     properties (SetObservable)
         volumeImage = ImageWrapper()      % 3D input volume image
-        seedImage         % 2D seed image containing user-provided scribbles in the start slice
-        
         orientation = 3   % The index of the dimension perpendicular to the seedImage slice
         startIndex        % start slice index
         sliceRange        % 2x1 matrix to store the minimum and maximum slice index. Leave empty to use first and last slices
@@ -39,6 +37,8 @@ classdef SlicSegAlgorithm < CoreBaseClass
     properties (SetAccess = private)
         segImage          % 3D image for segmentation result
         probabilityImage  % 3D image of probability of being foreground
+        seedImage         % 3D seed image containing user-provided scribbles in each slice
+
     end
     
     events
@@ -46,7 +46,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
     end
     
     properties (Access = private)
-        randomForest_foreward        % Using two Random Forests for propagating towards two directions
+        randomForest_foreward       % Using two Random Forests for propagating towards two directions
         randomForest_backward       % This makes segmentation faster than using a single Random Forest
         propagate_direction
     end
@@ -65,8 +65,6 @@ classdef SlicSegAlgorithm < CoreBaseClass
             obj.AddPostSetListener(obj, 'orientation', @obj.ResetSeedAndSegmentationResultCallback);
 
             % When these properties are changed, we invalidate just the segmentation results
-            obj.AddPostSetListener(obj, 'seedImage', @obj.ResetSegmentationResultCallback);
-            obj.AddPostSetListener(obj, 'startIndex', @obj.ResetSegmentationResultCallback);
             obj.AddPostSetListener(obj, 'lambda', @obj.ResetSegmentationResultCallback);
             obj.AddPostSetListener(obj, 'sigma', @obj.ResetSegmentationResultCallback);
             obj.AddPostSetListener(obj, 'innerDis', @obj.ResetSegmentationResultCallback);
@@ -83,10 +81,10 @@ classdef SlicSegAlgorithm < CoreBaseClass
         function StartSliceSegmentation(obj)
             % Creates a segmentation for the image slice specified in
             % startIndex. The seed image and start index must be set before calling this method.
-            
             if(isempty(obj.startIndex) || isempty(obj.seedImage))
                 error('startIndex and seedImage must be set before calling StartSliceSegmentation()');
             end
+           
             imageSize = obj.volumeImage.getImageSize;
             if((obj.startIndex < 1) || (obj.startIndex > imageSize(obj.orientation)))
                  error('startIndex is not set to a valid value in the range for this image size and orientation');
@@ -141,6 +139,18 @@ classdef SlicSegAlgorithm < CoreBaseClass
             end
         end
         
+        function Refine(obj, currentSliceIdx)
+            imgSlice  = obj.volumeImage.get2DSlice(currentSliceIdx, obj.orientation);
+            seedSlice = obj.seedImage.get2DSlice(currentSliceIdx, obj.orientation);
+            probSlice = obj.probabilityImage.get2DSlice(currentSliceIdx, obj.orientation);
+            initSegSlice = obj.segImage.get2DSlice(currentSliceIdx, obj.orientation);
+            initSegSlice = (1-initSegSlice)*128 + 127;
+            seedDistance = bwdist(seedSlice);
+            seedSlice(seedDistance > 30) = initSegSlice(seedDistance > 30);
+            [flow, currentSegLabel] = interactive_maxflowmex(imgSlice, seedSlice, probSlice, obj.lambda, obj.sigma);
+            currentSegLabel = 1-currentSegLabel;
+            obj.segImage.replaceImageSlice(currentSegLabel, currentSliceIdx, obj.orientation);
+        end
         function Reset(obj)
             % Resets the random forest and results
             obj.randomForest_foreward = [];
@@ -156,12 +166,13 @@ classdef SlicSegAlgorithm < CoreBaseClass
             fullImageSize = obj.volumeImage.getImageSize;
             obj.segImage = ImageWrapper(zeros(fullImageSize, 'uint8'));
             obj.probabilityImage = ImageWrapper(zeros(fullImageSize));
+            obj.seedImage = ImageWrapper(zeros(fullImageSize, 'uint8'));
         end
         
         function ResetSeedPoints(obj)
             % Deletes the current seed points
-            sliceSize = obj.volumeImage.get2DSliceSize(obj.orientation);
-            obj.seedImage = zeros(sliceSize, 'uint8');
+            fullImageSize = obj.volumeImage.getImageSize;
+            obj.seedImage = ImageWrapper(zeros(fullImageSize, 'uint8'));
         end
         
         function set.volumeImage(obj, volumeImage)
@@ -169,6 +180,35 @@ classdef SlicSegAlgorithm < CoreBaseClass
             obj.volumeImage = ImageWrapper(volumeImage);
             obj.ResetSegmentationResult();
             obj.ResetSeedPoints();
+        end
+        
+        function slice = GetSeedSlice(obj, idx)
+            slice = obj.seedImage.get2DSlice(idx, obj.orientation);
+        end
+        
+        function AddSeeds(obj, seeds, foreground)
+            radius=2;
+            if(foreground)
+                labelIndex = 127;
+            else
+                labelIndex = 255;
+            end
+            sliceSize = obj.seedImage.get2DSliceSize(obj.orientation);
+            seeds_number = length(seeds);
+            for id = 1:seeds_number/3
+                x = seeds((id-1)*3 + 1);
+                y = seeds((id-1)*3 + 2);
+                z = seeds((id-1)*3 + 3);
+                imin = max(1, x-radius);
+                imax = min(sliceSize(1), x+radius);
+                jmin = max(1, y-radius);
+                jmax = min(sliceSize(2), y+radius);
+                for i = imin : imax
+                    for j = jmin : jmax
+                        obj.seedImage.setPixelValue(i, j, z, labelIndex);
+                    end
+                end
+            end
         end
     end
     
@@ -249,7 +289,11 @@ classdef SlicSegAlgorithm < CoreBaseClass
         end
         
         function label = GetSeedLabelImage(obj)
-            label = obj.seedImage;
+            label = obj.seedImage.get2DSlice(obj.startIndex, obj.orientation);
+            foreground_empty = isempty(find(label == 127, 1));
+            if(foreground_empty)
+                error('scribbles for foreground should be provided');
+            end
             [H,W] = size(label);
             for i = 5:5:H-5
                 label(i,5)=255;
@@ -285,7 +329,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
             temp0=lastSeg;
             temp1=imerode(temp0,se);
             currentdis=0;
-            while(~isempty(find(temp1>0)))
+            while(~isempty(find(temp1 > 0, 1)))
                 dis0=temp0-temp1;
                 currentdis=currentdis+1;
                 dis(dis0>0)=currentdis;
@@ -345,9 +389,8 @@ classdef SlicSegAlgorithm < CoreBaseClass
         
         function seg = GetSingleSliceSegmentation(currentSeedLabel, currentI, currentP, lambda, sigma)
             % use max flow to get the segmentation in one slice
-            
             currentSeed = currentSeedLabel;
-            [flow, currentSegLabel] = wgtmaxflowmex(currentI, currentSeed, currentP, lambda, sigma);
+            [flow, currentSegLabel] = interactive_maxflowmex(currentI, currentSeed, currentP, lambda, sigma);
             currentSegLabel = 1-currentSegLabel;
             se = strel('disk', 2);
             currentSegLabel = imclose(currentSegLabel, se);
@@ -381,6 +424,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
             currentSeedLabel(fgMask>0)=127;
             currentSeedLabel(bgMask>0)=255;
         end
+        
         function ROI = GetSegmentationROI(segLabel)
             [row, col] = find(segLabel > 0);
             h0 = min(row);

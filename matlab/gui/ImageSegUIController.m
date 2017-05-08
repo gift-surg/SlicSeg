@@ -10,11 +10,6 @@ classdef ImageSegUIController < CoreBaseClass
     % Distributed under the BSD-3 licence. Please see the file licence.txt 
     % This software is not certified for clinical use.
     %
-    
-    properties
-        leftMouseSelectsForeground = true
-    end
-    
     properties (SetObservable)
         currentViewImageIndex % The currently displayed slice number
         guiState  = ImageSegUIState.NoImage % The current state of the GUI
@@ -24,13 +19,15 @@ classdef ImageSegUIController < CoreBaseClass
         labelImage
         imageAxes
         slicSeg
-        mouseIsDown = false
+        leftMouseIsDown = false
+        rightMouseIsDown = false
         reporting = CoreReportingDefault
         propagateIndex = 0
         stages = 1;
         isPropagating = false
         currentMetaData
         sliceLocations
+        temporarySeeds = []
     end
 
     methods
@@ -42,6 +39,7 @@ classdef ImageSegUIController < CoreBaseClass
             % Listen for mouse events
             set(currentFigure, 'WindowButtonDownFcn', @obj.mouseDown);
             set(currentFigure, 'WindowButtonMotionFcn', {@obj.mouseMove});
+            set(currentFigure, 'WindowScrollWheelFcn', {@obj.mouseScroll});
             set(currentFigure, 'WindowButtonUpFcn', {@obj.mouseUp});
             
             % Listen for changes in the segmented slice and the currently
@@ -68,7 +66,7 @@ classdef ImageSegUIController < CoreBaseClass
                 return;
             end
             obj.currentMetaData = metaData;
-            obj.slicSeg.volumeImage = newImage;
+            obj.slicSeg.volumeImage = double(newImage);
             maxSliceNumber = obj.getMaxSliceNumber;
             currentSliceNumber = max(1, min(maxSliceNumber, round(maxSliceNumber/2)));
             imgSize = obj.slicSeg.volumeImage.getImageSize;
@@ -106,7 +104,6 @@ classdef ImageSegUIController < CoreBaseClass
             % Segment the current slice
             obj.reporting.ShowProgress('Segmenting');
             obj.slicSeg.startIndex = obj.currentViewImageIndex;
-            obj.slicSeg.seedImage = obj.labelImage;
             obj.slicSeg.StartSliceSegmentation();
             obj.showResult();            
             obj.reporting.CompleteProgress();
@@ -132,6 +129,10 @@ classdef ImageSegUIController < CoreBaseClass
             obj.guiState = ImageSegUIState.FullySegmented;
         end
         
+        function refine(obj)
+            obj.slicSeg.Refine(obj.currentViewImageIndex);
+            obj.showResult();
+        end
         function reset(obj)
             % Delete the current seed points and segmentations
             obj.resetLabelImage(size(obj.labelImage));
@@ -149,49 +150,48 @@ classdef ImageSegUIController < CoreBaseClass
     
     methods (Access = private)
         function mouseDown(obj, ~, ~)
-            obj.mouseIsDown = true;
+            if(strcmp(get(gcf,'SelectionType'),'normal'))
+                obj.leftMouseIsDown = true;
+            elseif(strcmp(get(gcf,'SelectionType'), 'alt'))
+                obj.rightMouseIsDown = true;
+            end
         end
         
         function mouseUp(obj, ~, ~)
-            obj.mouseIsDown = false;
+            obj.slicSeg.AddSeeds(obj.temporarySeeds,obj.leftMouseIsDown);
+            if(obj.guiState == ImageSegUIState.ImageLoaded)
+                obj.guiState = ImageSegUIState.ScribblesProvided;
+            elseif(obj.guiState == ImageSegUIState.FullySegmented)
+                obj.refine();
+            end
+            obj.temporarySeeds = [];
+            obj.leftMouseIsDown = false;
+            obj.rightMouseIsDown = false;
         end
         
-        function mouseMove(obj, src, ~)
-            if(~obj.mouseIsDown)
+        function mouseMove(obj, ~, ~)
+            if(~obj.leftMouseIsDown && ~obj.rightMouseIsDown)
                 return;
             end
-
-            select_foreground = obj.leftMouseSelectsForeground;
-            selection_type = get(src, 'SelectionType');
-            if strcmp(selection_type, 'alt')
-                select_foreground = ~select_foreground;
-            end
-
+            
             coords = get(gca, 'currentpoint');
             x = floor(coords(1,2));
             y = floor(coords(1,1));
             
-            if select_foreground
-                labelIndex = 127;
+            if obj.leftMouseIsDown
                 marker = '.r';
             else
-                labelIndex = 255;
                 marker = '.b';
             end
             
             hold on;
             plot(coords(1,1), coords(1,2), marker, 'MarkerSize', 10);
-
-            radius=2;
-            imin = max(1, x-radius);
-            imax = min(size(obj.labelImage,1), x+radius);
-            jmin = max(1, y-radius);
-            jmax = min(size(obj.labelImage,2), y+radius);
-            for i = imin : imax
-                for j = jmin : jmax
-                    obj.labelImage(i, j) = labelIndex;
-                end
-            end
+            obj.temporarySeeds = [obj.temporarySeeds, x, y, obj.currentViewImageIndex];
+        end
+        
+        function mouseScroll(obj, ~, eventdata)
+            count = eventdata.VerticalScrollCount;
+            obj.currentViewImageIndex = obj.currentViewImageIndex + count; 
         end
         
         function UpdateSegmentationProgress(obj, ~, eventData)
@@ -211,15 +211,14 @@ classdef ImageSegUIController < CoreBaseClass
     
         function showResult(obj)
             I = obj.slicSeg.volumeImage.get2DSlice(obj.currentViewImageIndex, obj.slicSeg.orientation);
+            I = uint8(I);
             showI = repmat(I,1,1,3);
             
             segI = obj.slicSeg.segImage.get2DSlice(obj.currentViewImageIndex, obj.slicSeg.orientation);
             if(~isempty(find(segI,1)))
                 showI=obj.addContourToImage(showI,segI);
             end
-            if(obj.currentViewImageIndex==obj.slicSeg.startIndex)
-                showI=obj.addSeedsToImage(showI,obj.slicSeg.seedImage);
-            end
+            showI = obj.addSeedsToImage(showI,obj.slicSeg.GetSeedSlice(obj.currentViewImageIndex));
             axes(obj.imageAxes);
             imshow(showI);
         end

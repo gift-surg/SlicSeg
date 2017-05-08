@@ -10,7 +10,7 @@
 // This software is not certified for clinical use.
 // 
 
-__device__ unsigned char getPixel(const unsigned char *array, int H, int W, int i, int j)
+__device__ double getPixel(const double *array, int H, int W, int i, int j)
 {
     if(i<0 || i>=H || j<0 ||j>=W)
     {
@@ -31,7 +31,7 @@ __device__ void setPixel(double *array, int H, int W, int i, int j, double value
     *(array+H*j+i) = value;
 }
 
-__global__ void imageGradient(const unsigned char * inputData, double *g_mag, double *g_orient, const int H, const int W)
+__global__ void imageGradient(const double * inputData, double *g_mag, double *g_orient, const int H, const int W)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;

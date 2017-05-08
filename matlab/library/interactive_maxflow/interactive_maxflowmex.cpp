@@ -1,7 +1,7 @@
-// wgtmaxflowmex: max flow with possibility (based on random forest)
+// interactive_maxflowmex: max flow with possibility for 2d slice (based on random forest)
 //
 // Syntax:
-//   [flow, label] = wgtmaxflowmex(I, Seeds, Prob, lambda, sigma);
+//   [flow, label] = interactive_maxflowmex(I, Seeds, Prob, lambda, sigma);
 //
 // This is a C++ mex file that is automatically compiled by the function CompileSlicSeg
 //
@@ -31,7 +31,7 @@ void mexFunction(int			nlhs, 		/* number of expected outputs */
 	// input checks
 	if (nrhs != 5 )
 	{
-		mexErrMsgTxt ("USAGE: [flow label]=wgtmaxflowmex(I,Seeds,Prob,lambda,sigma);");
+		mexErrMsgTxt ("USAGE: [flow label]=interactive_maxflowmex(I,Seeds,Prob,lambda,sigma); \n");
 	}
 	const mxArray *I = prhs[0];
 	const mxArray *Seed = prhs[1];
@@ -39,7 +39,7 @@ void mexFunction(int			nlhs, 		/* number of expected outputs */
     double lamda=* mxGetPr(prhs[3]);
     double sigma= * mxGetPr(prhs[4]);
     
-    unsigned char * IPr=(unsigned char *)mxGetPr(I);
+    double * IPr=(double *)mxGetPr(I);
     unsigned char * SeedPr=(unsigned char *)mxGetPr(Seed);
     double * ProbPr=mxGetPr(Prob);
     

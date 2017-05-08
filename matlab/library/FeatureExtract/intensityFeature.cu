@@ -30,7 +30,7 @@ __device__ void setPixel(double *array,int H,int W,int i,int j,double value)
     *(array+H*j+i) = value;
 }
 
-__global__ void intensityFeature(const unsigned char *inputData, double *outputMean, double *outputvar, const int H, const int W, int r)
+__global__ void intensityFeature(const double *inputData, double *outputMean, double *outputvar, const int H, const int W, int r)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -39,7 +39,7 @@ __global__ void intensityFeature(const unsigned char *inputData, double *outputM
     if(x<kernel_radius || x>=H-kernel_radius ||
        y<kernel_radius || y>=W-kernel_radius)
     {
-        char temp_value = *(inputData+x+y*H);
+        double temp_value = *(inputData+x+y*H);
         setPixel(outputMean, H, W, x, y, temp_value);
         setPixel(outputvar, H, W, x, y, 0);
     }
