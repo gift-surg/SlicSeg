@@ -113,7 +113,6 @@ How to use the user interface
   * Click `Load` to load Dicom or a series of png image from a directory you specify
   * Choose your starting slice (usually a slice in the middle of the object)
   * Draw **scribbles** (lines) over parts of the object you wish to segment. The left button selects the foreground (object) and the right button selects the background.
-    * The `Background` button makes the left button select background, while the `Foreground` button makes the left button select foreground
   * Click `Segment` to segment the object on this slice, based on the scribbes you have entered
   * Select the range (start and end slices) over which the segmentation will propagate
   * Click `Propagate` to continue the segmentation over these slices
