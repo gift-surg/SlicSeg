@@ -74,6 +74,8 @@ glbHandles = handles;
 % Listen for slice number change callbacks
 addlistener(imageSegUIController, 'currentViewImageIndex', 'PostSet', @UpdateSliceNumber);
 addlistener(imageSegUIController, 'guiState', 'PostSet', @UpdateGuiState);
+addlistener(imageSegUIController, 'contrastMin', 'PostSet', @UpdateGuiContrastEdit);
+addlistener(imageSegUIController, 'contrastMax', 'PostSet', @UpdateGuiContrastEdit);
 UpdateGui(ImageSegUIState.NoImage);
 
 
@@ -112,6 +114,17 @@ function pushbutton_reload_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 global imageSegUIController
 imageSegUIController.reset();
+
+% --- Executes on button press in pushbutton_reset_contrast.
+function pushbutton_reset_contrast_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_reload (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+global imageSegUIController
+contrastMin = str2num(get(handles.edit_contrastMin, 'String'));
+contrastMax = str2num(get(handles.edit_contrastMax, 'String'));
+imageSegUIController.resetContrast(contrastMin, contrastMax);
+
 
 % --- Executes on button press in pushbutton_segment.
 function pushbutton_segment_Callback(hObject, eventdata, handles)
@@ -231,7 +244,13 @@ function UpdateSliceNumber(eventSrc, eventData)
 function UpdateGuiState(eventSrc, eventData)
     % Callback for when the controller has entered a different state
     UpdateGui(eventData.AffectedObject.guiState);
-    
+
+function UpdateGuiContrastEdit(eventSrc, eventData)
+    global glbHandles,
+    disp('UpdateGuiContrastEdit');
+    set(glbHandles.edit_contrastMin, 'String', num2str(eventData.AffectedObject.contrastMin));
+    set(glbHandles.edit_contrastMax, 'String', num2str(eventData.AffectedObject.contrastMax));
+
 function UpdateGui(newState)
     global glbHandles;
     loaded = 'off';
@@ -269,10 +288,13 @@ function UpdateGui(newState)
     end
    
     set(glbHandles.slider_imageIndex, 'Enable', loaded);
-    set(glbHandles.edit_max, 'Enable', loaded);
-    set(glbHandles.edit_min, 'Enable', loaded);
     set(glbHandles.pushbutton_reload, 'Enable', loaded);
+    set(glbHandles.edit_contrastMax, 'Enable', loaded);
+    set(glbHandles.edit_contrastMin, 'Enable', loaded);
+    set(glbHandles.pushbutton_reset_contrast, 'Enable', loaded);    
     set(glbHandles.pushbutton_segment, 'Enable', scribbleProvided);
+    set(glbHandles.edit_max, 'Enable', startSliceSegmented);
+    set(glbHandles.edit_min, 'Enable', startSliceSegmented);
     set(glbHandles.pushbutton_Propagate, 'Enable', startSliceSegmented);
     set(glbHandles.pushbutton_save, 'Enable', fullySegmented);
     

@@ -63,12 +63,12 @@ function [loadedImage, representativeMetadata, sliceLocations] = ChooseImages
         
         % Extract the image from its wrapper
         loadedImage = imageWrapper.RawImage;
-        minValue = min(loadedImage(:));
-        maxValue = max(loadedImage(:));
-        loadedImage = round(255*(loadedImage - minValue)/(maxValue - minValue));
-        loadedImage = min(255, loadedImage);
-        loadedImage = max(0, loadedImage);
-        loadedImage = uint8(loadedImage);
+%         minValue = min(loadedImage(:));
+%         maxValue = 800;%max(loadedImage(:));
+%         loadedImage = round(255*(loadedImage - minValue)/(maxValue - minValue));
+%         loadedImage = min(255, loadedImage);
+%         loadedImage = max(0, loadedImage);
+%         loadedImage = uint8(loadedImage);
         
     else
         representativeMetadata = [];

@@ -13,6 +13,8 @@ classdef ImageSegUIController < CoreBaseClass
     properties (SetObservable)
         currentViewImageIndex % The currently displayed slice number
         guiState  = ImageSegUIState.NoImage % The current state of the GUI
+        contrastMin = 0
+        contrastMax = 0
     end
     
     properties (Access = private)
@@ -65,8 +67,11 @@ classdef ImageSegUIController < CoreBaseClass
                 obj.guiState = ImageSegUIState.NoImage;
                 return;
             end
+            newImage = double(newImage);
+            obj.contrastMin = min(newImage(:));
+            obj.contrastMax = max(newImage(:));
             obj.currentMetaData = metaData;
-            obj.slicSeg.volumeImage = double(newImage);
+            obj.slicSeg.volumeImage = newImage;
             maxSliceNumber = obj.getMaxSliceNumber;
             currentSliceNumber = max(1, min(maxSliceNumber, round(maxSliceNumber/2)));
             imgSize = obj.slicSeg.volumeImage.getImageSize;
@@ -146,6 +151,13 @@ classdef ImageSegUIController < CoreBaseClass
             newSliceNumber = max(1, min(newSliceNumber, obj.getMaxSliceNumber));
             obj.currentViewImageIndex = newSliceNumber;
         end
+        
+        function resetContrast(obj, contrastMin, contrastMax)
+            obj.contrastMin = min(contrastMin, contrastMax);
+            obj.contrastMax = max(contrastMin, contrastMax);
+            obj.showResult();
+        end
+
     end
     
     methods (Access = private)
@@ -208,9 +220,12 @@ classdef ImageSegUIController < CoreBaseClass
             
             obj.showResult();
         end
-    
+        
         function showResult(obj)
             I = obj.slicSeg.volumeImage.get2DSlice(obj.currentViewImageIndex, obj.slicSeg.orientation);
+            I = 255*(I - obj.contrastMin)/(obj.contrastMax - obj.contrastMin);
+            I(I>255) = 255;
+            I(I<0) = 0;
             I = uint8(I);
             showI = repmat(I,1,1,3);
             
@@ -218,6 +233,9 @@ classdef ImageSegUIController < CoreBaseClass
             if(~isempty(find(segI,1)))
                 showI=obj.addContourToImage(showI,segI);
             end
+%             if(obj.currentViewImageIndex==obj.slicSeg.startIndex)
+%                 showI=obj.addSeedsToImage(showI,obj.slicSeg.seedImage);
+%             end
             showI = obj.addSeedsToImage(showI,obj.slicSeg.GetSeedSlice(obj.currentViewImageIndex));
             axes(obj.imageAxes);
             imshow(showI);

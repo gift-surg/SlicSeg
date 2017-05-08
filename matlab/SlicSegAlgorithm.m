@@ -28,8 +28,8 @@ classdef SlicSegAlgorithm < CoreBaseClass
         startIndex        % start slice index
         sliceRange        % 2x1 matrix to store the minimum and maximum slice index. Leave empty to use first and last slices
         
-        lambda   = 5.0    % parameter for max-flow; controls the weight of unary term and binary term
-        sigma    = 3.5    % parameter for max-flow; controls the sensitivity of intensity difference
+        lambda   = 10.0   % parameter for max-flow; controls the weight of unary term and binary term
+        sigma    = 5      % parameter for max-flow; controls the sensitivity of intensity difference
         innerDis = 5      % radius of erosion when generating new training data
         outerDis = 6      % radius of dilation when generating new training data  
     end
@@ -146,9 +146,12 @@ classdef SlicSegAlgorithm < CoreBaseClass
             initSegSlice = obj.segImage.get2DSlice(currentSliceIdx, obj.orientation);
             initSegSlice = (1-initSegSlice)*128 + 127;
             seedDistance = bwdist(seedSlice);
-            seedSlice(seedDistance > 30) = initSegSlice(seedDistance > 30);
+            seedSlice(seedDistance > 15) = initSegSlice(seedDistance > 15);
             [flow, currentSegLabel] = interactive_maxflowmex(imgSlice, seedSlice, probSlice, obj.lambda, obj.sigma);
             currentSegLabel = 1-currentSegLabel;
+            se = strel('disk', 2);
+            currentSegLabel = imclose(currentSegLabel, se);
+            currentSegLabel = imopen(currentSegLabel, se);
             obj.segImage.replaceImageSlice(currentSegLabel, currentSliceIdx, obj.orientation);
         end
         function Reset(obj)
@@ -258,27 +261,28 @@ classdef SlicSegAlgorithm < CoreBaseClass
             % Get prediction for current slice using previous slice segmentation as a prior
             currentVolumeSlice = obj.volumeImage.get2DSlice(currentSegIndex, obj.orientation);
             priorSegmentedSlice = obj.segImage.get2DSlice(priorSegIndex, obj.orientation);
-            
-            % use roi to crop the image to save runtime
-            roi = SlicSegAlgorithm.GetSegmentationROI(priorSegmentedSlice);
-            roiCurrentSlice = currentVolumeSlice(roi(1):roi(2),roi(3):roi(4));
-            roiP0 = obj.Predict(roiCurrentSlice);
-            roiPriorSegSlice = priorSegmentedSlice(roi(1):roi(2),roi(3):roi(4));
-            roiProbSlice = SlicSegAlgorithm.ProbabilityProcessUsingShapePrior(roiP0, roiPriorSegSlice);
-
-            % Compute seed labels based on previous slices
-            [priorSeedLabel, ~] = SlicSegAlgorithm.getSeedLabels(roiPriorSegSlice, obj.innerDis, obj.outerDis);
-            roiSegSlice = SlicSegAlgorithm.GetSingleSliceSegmentation(priorSeedLabel, roiCurrentSlice, roiProbSlice, obj.lambda, obj.sigma);
-            
-            % Further train the algorithm based on the newly segmented slice
-            [~, currentTrainLabel] = SlicSegAlgorithm.getSeedLabels(roiSegSlice, obj.innerDis, obj.outerDis);                
-            obj.Train(currentTrainLabel, roiCurrentSlice);
-            
-            % Update the output images
             segmentationSlice = zeros(size(priorSegmentedSlice));
-            segmentationSlice(roi(1):roi(2),roi(3):roi(4)) = roiSegSlice;
             probabilitySlice = zeros(size(priorSegmentedSlice));
-            probabilitySlice(roi(1):roi(2),roi(3):roi(4)) = roiProbSlice;
+            if(sum(priorSegmentedSlice(:)) > 10)
+                % use roi to crop the image to save runtime
+                roi = SlicSegAlgorithm.GetSegmentationROI(priorSegmentedSlice);
+                roiCurrentSlice = currentVolumeSlice(roi(1):roi(2),roi(3):roi(4));
+                roiP0 = obj.Predict(roiCurrentSlice);
+                roiPriorSegSlice = priorSegmentedSlice(roi(1):roi(2),roi(3):roi(4));
+                roiProbSlice = SlicSegAlgorithm.ProbabilityProcessUsingShapePrior(roiP0, roiPriorSegSlice);
+
+                % Compute seed labels based on previous slices
+                [priorSeedLabel, ~] = SlicSegAlgorithm.getSeedLabels(roiPriorSegSlice, obj.innerDis, obj.outerDis);
+                roiSegSlice = SlicSegAlgorithm.GetSingleSliceSegmentation(priorSeedLabel, roiCurrentSlice, roiProbSlice, obj.lambda, obj.sigma);
+
+                % Further train the algorithm based on the newly segmented slice
+                [~, currentTrainLabel] = SlicSegAlgorithm.getSeedLabels(roiSegSlice, obj.innerDis, obj.outerDis);                
+                obj.Train(currentTrainLabel, roiCurrentSlice);
+
+                % Update the output images
+                segmentationSlice(roi(1):roi(2),roi(3):roi(4)) = roiSegSlice;
+                probabilitySlice(roi(1):roi(2),roi(3):roi(4)) = roiProbSlice;
+            end
             obj.UpdateResults(currentSegIndex, segmentationSlice, probabilitySlice);
         end
         
