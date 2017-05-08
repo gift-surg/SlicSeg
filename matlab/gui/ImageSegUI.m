@@ -247,7 +247,6 @@ function UpdateGuiState(eventSrc, eventData)
 
 function UpdateGuiContrastEdit(eventSrc, eventData)
     global glbHandles,
-    disp('UpdateGuiContrastEdit');
     set(glbHandles.edit_contrastMin, 'String', num2str(eventData.AffectedObject.contrastMin));
     set(glbHandles.edit_contrastMax, 'String', num2str(eventData.AffectedObject.contrastMax));
 
