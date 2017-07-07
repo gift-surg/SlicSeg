@@ -25,11 +25,15 @@ classdef ImageSegUIController < CoreBaseClass
         rightMouseIsDown = false
         reporting = CoreReportingDefault
         propagateIndex = 0
-        stages = 1;
+        stages = 1
         isPropagating = false
-        currentMetaData
-        sliceLocations
         temporarySeeds = []
+        loadImageType  % dicom, png, nii or nii.gz
+        % for dicom images
+        currentMetaData = []
+        sliceLocations = []
+        % for nii image
+        niiStruct = []
     end
 
     methods
@@ -57,20 +61,53 @@ classdef ImageSegUIController < CoreBaseClass
         end
         
         function selectAndLoad(obj)
-            % Opens a dialog allowing the user to select a directory from
-            % which images will be loaded
+            % Opens a dialog allowing the user to select an image
             reset(obj.imageAxes);
             cla(obj.imageAxes);
             obj.slicSeg.Reset();
-            [newImage, metaData, obj.sliceLocations] = ChooseImages();
-            if isempty(newImage)
-                obj.guiState = ImageSegUIState.NoImage;
-                return;
+            persistent lastLoadedFolder
+            if isempty(lastLoadedFolder)
+                lastLoadedFolder = 'test/a23_05/img';
             end
-            newImage = double(newImage);
+            [FileName, DirName] = uigetfile({'*'},'Select image file',lastLoadedFolder);
+            if (FileName == 0)
+                obj.guiState = ImageSegUIState.NoImage;
+                return
+            end
+            if(endsWith(FileName,'.png'))
+                obj.loadImageType = LoadImageType.Png;
+                pngFileNames = CoreDiskUtilities.GetRecursiveListOfFiles(DirName, '*.png');
+                [pngBaseFolder, ~, ~] = fileparts(pngFileNames{1});
+                pngFileNames = CoreDiskUtilities.GetRecursiveListOfFiles(pngBaseFolder, '*.png');
+                pngFileNames = CoreTextUtilities.SortFilenames(pngFileNames);
+                firstImage = imread(pngFileNames{1});
+                imageSize = [size(firstImage), numel(pngFileNames)];
+                loadedImage = zeros(imageSize, 'like', firstImage);
+                for imageIndex = 2 : numel(pngFileNames)
+                    loadedImage(:, :, imageIndex) = imread(pngFileNames{imageIndex});
+                end
+            elseif(endsWith(FileName,'.nii'))
+                obj.loadImageType = LoadImageType.Nii;
+                obj.niiStruct = load_untouch_nii(fullfile(DirName,FileName));
+                loadedImage = obj.niiStruct.img;
+            elseif(endsWith(FileName,'.nii.gz'))
+                obj.loadImageType = LoadImageType.Niigz;
+                obj.niiStruct = load_untouch_nii(fullfile(DirName,FileName));
+                loadedImage = obj.niiStruct.img;                
+            else
+                obj.loadImageType = LoadImageType.Dicom;
+                try
+                    [imageWrapper, representativeMetadata, ~, ~, sliceLocation] = DMFindAndLoadMainImageFromDicomFiles(DirName);
+                catch ex
+                    return
+                end
+                loadedImage = imageWrapper.RawImage;
+                obj.currentMetaData = representativeMetadata;
+                obj.sliceLocations  = sliceLocation;
+            end
+            newImage = double(loadedImage);
             obj.contrastMin = min(newImage(:));
             obj.contrastMax = max(newImage(:));
-            obj.currentMetaData = metaData;
             obj.slicSeg.volumeImage = newImage;
             maxSliceNumber = obj.getMaxSliceNumber;
             currentSliceNumber = max(1, min(maxSliceNumber, round(maxSliceNumber/2)));
@@ -86,23 +123,18 @@ classdef ImageSegUIController < CoreBaseClass
             if isempty(obj.slicSeg.segImage.rawImage)
                 return
             end
-
-            [fileName, pathName, fileType] = obj.SaveImageDialogBox(~isempty(obj.currentMetaData));
-
-            [~, name, ~] = fileparts(fileName);
-            baseFilename = fullfile(pathName, name);
-            
-            if ~isequal(fileType,0) && ~isequal(fileName,0) && ~isequal(pathName,0)
-                obj.reporting.ShowProgress('Exporting segmentation');
-                switch fileType
-                    case 'dcm'
-                        SaveDicomSegmentation((obj.slicSeg.segImage.rawImage > 0), baseFilename, obj.currentMetaData, obj.sliceLocations, obj.reporting);
-                    case 'png'
-                        SavePNGSegmentation(obj.slicSeg.segImage, baseFilename, 3);
-                end
-                obj.reporting.CompleteProgress();
+            [fileName, pathName] = obj.SaveImageDialogBox();
+            switch obj.loadImageType
+                case LoadImageType.Dicom
+                    SaveDicomSegmentation((obj.slicSeg.segImage.rawImage > 0), [pathName '/'], obj.currentMetaData, obj.sliceLocations, obj.reporting);
+                case LoadImageType.Png
+                    SavePNGSegmentation(obj.slicSeg.segImage, pathName, 3);
+                otherwise
+                    saveNii = obj.niiStruct;
+                    saveNii.img = obj.slicSeg.segImage.rawImage;       
+                    saveName = fullfile(pathName, fileName);
+                    save_untouch_nii(saveNii, saveName);
             end
-            
         end
 
         function segment(obj)
@@ -291,45 +323,19 @@ classdef ImageSegUIController < CoreBaseClass
             end
         end
         
-        function [fileName, pathName, fileType] = SaveImageDialogBox(obj, allowDicom)
-            persistent lastExportFolder
-            
-            fileType = 0;
-            
-            if allowDicom
-                filespec = {'*.dcm', 'DICOM (*.dcm)';
-                            '*.png', 'PNG (*.png)';
-                            };
+        function [fileName, pathName] = SaveImageDialogBox(obj)
+            persistent lastExportFolder;
+            if(isempty(lastExportFolder))
+                lastExportFolder = 'test/a23_05/seg';
+            end
+            if obj.loadImageType == LoadImageType.Dicom || (obj.loadImageType == LoadImageType.Png)
+                pathName = uigetdir(lastExportFolder);
+                fileName = [];
             else
-                filespec = {'*.png', 'PNG (*.png)';
-                            };
+                filespec = {'*.nii', 'Nifty (*.nii)';};
+                [fileName, pathName, filterIndex]=uiputfile(filespec, 'Save image as', fullfile(lastExportFolder, ''));
             end
-
-            if isempty(lastExportFolder)
-                [fileName, pathName, filterIndex] = uiputfile(filespec, 'Save image as');
-            else
-                [fileName, pathName, filterIndex] = uiputfile(filespec, 'Save image as', fullfile(lastExportFolder, ''));
-            end
-            
-            if filterIndex == 0
-                return
-            end
-            
             lastExportFolder = pathName;
-            
-            
-            if allowDicom
-                switch filterIndex
-                    case 1
-                        fileType = 'dcm';
-                    case 2
-                        fileType = 'png';
-                    otherwise
-                        fileType = [];
-                end
-            else
-                fileType = 'png';
-            end
         end
     end
 end

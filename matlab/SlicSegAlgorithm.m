@@ -24,6 +24,8 @@ classdef SlicSegAlgorithm < CoreBaseClass
     
     properties (SetObservable)
         volumeImage = ImageWrapper()      % 3D input volume image
+        seedImage         % 3D seed image containing user-provided scribbles in each slice
+        
         orientation = 3   % The index of the dimension perpendicular to the seedImage slice
         startIndex        % start slice index
         sliceRange        % 2x1 matrix to store the minimum and maximum slice index. Leave empty to use first and last slices
@@ -37,7 +39,7 @@ classdef SlicSegAlgorithm < CoreBaseClass
     properties (SetAccess = private)
         segImage          % 3D image for segmentation result
         probabilityImage  % 3D image of probability of being foreground
-        seedImage         % 3D seed image containing user-provided scribbles in each slice
+        
 
     end
     
@@ -73,7 +75,6 @@ classdef SlicSegAlgorithm < CoreBaseClass
         
         function RunSegmention(obj)
             % Runs the full segmentation. The seed image and start index must be set before calling this method.
-
             obj.StartSliceSegmentation();
             obj.SegmentationPropagate();
         end

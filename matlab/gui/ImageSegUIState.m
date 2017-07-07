@@ -3,4 +3,3 @@ classdef ImageSegUIState
         NoImage, ImageLoaded, ScribblesProvided, SliceSegmented, FullySegmented
     end
 end
-
