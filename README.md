@@ -9,7 +9,6 @@ Slic-Seg was developed as part of the [GIFT-Surg][giftsurg] project. The algorit
 
 Algorithm and code by Guotai Wang.
 
-If you use this software, please cite [this paper][citation]. 
 
 
 How to cite
@@ -116,6 +115,7 @@ How to use the user interface
   * Click `Segment` to segment the object on this slice, based on the scribbes you have entered
   * Select the range (start and end slices) over which the segmentation will propagate
   * Click `Propagate` to continue the segmentation over these slices
+  * Add additional scribbles on the segmentation result for refinement if needed.
   * Click `Save` to save the segmentation
  
  
