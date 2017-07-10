@@ -74,7 +74,8 @@ classdef ImageSegUIController < CoreBaseClass
                 obj.guiState = ImageSegUIState.NoImage;
                 return
             end
-            if(endsWith(FileName,'.png'))
+            len = length(FileName);
+            if(strcmp(FileName(len-3:len),'.png'))
                 obj.loadImageType = LoadImageType.Png;
                 pngFileNames = CoreDiskUtilities.GetRecursiveListOfFiles(DirName, '*.png');
                 [pngBaseFolder, ~, ~] = fileparts(pngFileNames{1});
@@ -86,11 +87,11 @@ classdef ImageSegUIController < CoreBaseClass
                 for imageIndex = 2 : numel(pngFileNames)
                     loadedImage(:, :, imageIndex) = imread(pngFileNames{imageIndex});
                 end
-            elseif(endsWith(FileName,'.nii'))
+            elseif(strcmp(FileName(len-3:len),'.nii'))
                 obj.loadImageType = LoadImageType.Nii;
                 obj.niiStruct = load_untouch_nii(fullfile(DirName,FileName));
                 loadedImage = obj.niiStruct.img;
-            elseif(endsWith(FileName,'.nii.gz'))
+            elseif(strcmp(FileName(len-6:len),'.nii.gz'))
                 obj.loadImageType = LoadImageType.Niigz;
                 obj.niiStruct = load_untouch_nii(fullfile(DirName,FileName));
                 loadedImage = obj.niiStruct.img;                
