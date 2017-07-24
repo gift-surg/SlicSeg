@@ -3,11 +3,13 @@ variables:
 
 gift-gala:
   script:
-    - "$CI_SCRIPTS_DIR/test-mac.sh"
+    - MATLAB_EXE=/Applications/MATLAB_R2015b.app/bin/matlab
+    - MATLAB_SCRIPT=$(pwd)/matlab/CIBuildAndTest.m
+    - "$CI_SCRIPTS_DIR/test-mac.sh $MATLAB_EXE $MATLAB_SCRIPT"
   tags:
     - gift-gala
     - gift-mac
-    - matlab
+    - matlab-r2015b
     - cuda
 
 gift-adelie:
