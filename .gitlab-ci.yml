@@ -1,17 +1,31 @@
 variables:
   CI_SCRIPTS_DIR: "./ci"
 
-gift-gala:
+gift-gala-cuda7:
   script:
     - MATLAB_EXE=/Applications/MATLAB_R2016b.app/bin/matlab
     - MATLAB_SCRIPT=$(pwd)/matlab/CIBuildAndTest.m
     - XCODE_EXE=/Applications/Xcode7.3.1.app/Contents/Developer
-    - env DEVELOPER_DIR=$XCODE_EXE $CI_SCRIPTS_DIR/test-mac.sh $MATLAB_EXE $MATLAB_SCRIPT
+    - PATH_WITH_CUDA=/Developer/NVIDIA/CUDA-7.5/bin${PATH:+:${PATH}}
+    - env DEVELOPER_DIR=$XCODE_EXE PATH=$PATH_WITH_CUDA $CI_SCRIPTS_DIR/test-mac.sh $MATLAB_EXE $MATLAB_SCRIPT
   tags:
     - gift-gala
     - gift-mac
     - matlab-r2016b
     - cuda7
+
+gift-gala-cuda8:
+  script:
+    - MATLAB_EXE=/Applications/MATLAB_R2017a.app/bin/matlab
+    - MATLAB_SCRIPT=$(pwd)/matlab/CIBuildAndTest.m
+    - XCODE_EXE=/Applications/Xcode7.3.1.app/Contents/Developer
+    - PATH_WITH_CUDA=/Developer/NVIDIA/CUDA-8.0/bin${PATH:+:${PATH}}
+    - env DEVELOPER_DIR=$XCODE_EXE PATH=$PATH_WITH_CUDA $CI_SCRIPTS_DIR/test-mac.sh $MATLAB_EXE $MATLAB_SCRIPT
+  tags:
+    - gift-gala
+    - gift-mac
+    - matlab-r2017a
+    - cuda8
 
 gift-adelie:
   script:
