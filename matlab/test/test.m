@@ -12,5 +12,7 @@ slicSeg.startIndex = 22;
 slicSeg.sliceRange = [5,38];
 slicSeg.RunSegmention();
 tempDir = fullfile(tempdir(), 'a23_05');
-mkdir(tempDir);
+if ~exist(tempDir, 'dir')
+    mkdir(tempDir);
+end
 SavePNGSegmentation(slicSeg.segImage, fullfile(tempDir, 'seg'), 3);
