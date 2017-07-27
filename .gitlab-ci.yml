@@ -12,7 +12,7 @@ gift-gala-cuda7:
     - gift-gala
     - gift-mac
     - matlab-r2016b
-    - cuda7
+    - cuda-7
 
 gift-gala-cuda8:
   script:
@@ -25,16 +25,20 @@ gift-gala-cuda8:
     - gift-gala
     - gift-mac
     - matlab-r2017a
-    - cuda8
+    - cuda-8
 
 gift-adelie:
   script:
-    - "$CI_SCRIPTS_DIR/test-linux.sh"
+    - MATLAB_EXE=/usr/local/R2015b/bin/matlab
+    - MATLAB_SCRIPT=$(pwd)/matlab/CIBuildAndTest.m
+    - LD_PRELOAD_DIR==/usr/lib/x86_64-linux-gnu/libstdc++.so.6
+    - PATH_WITH_CUDA=/usr/local/cuda-7.5/bin${PATH:+:${PATH}}
+    - env LD_PRELOAD=$LD_PRELOAD_DIR PATH=$PATH_WITH_CUDA $CI_SCRIPTS_DIR/test-linux.sh $MATLAB_EXE $MATLAB_SCRIPT
   tags:
     - gift-adelie
     - gift-linux
     - matlab
-    - cuda
+    - cuda-7
 
 gift-skylight:
   script:
