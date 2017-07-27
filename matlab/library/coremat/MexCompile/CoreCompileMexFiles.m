@@ -52,8 +52,8 @@ function compiler = MexSetup(retry_instructions, reporting)
         disp(' ');        
         disp('***********************************************************************');
         mex -setup;
-        compiler = GetNameOfCppCompiler;
-        if isempty(compiler)
+        [cxx_compiler, name] = GetCppCompiler();
+        if isempty(name)
             reporting.ShowWarning('CoreCompileMexFiles:NoCompiler', ['I cannot compile mex files because no C++ compiler has been selected. Run mex -setup to choose your C++ compiler.' retry_instructions], []);
         end
     end
@@ -144,7 +144,7 @@ function Compile(mex_files_to_compile, framework_cache, cached_mex_file_info, ou
                     end
                     
                     if use_cuda
-                        mex_result = CoreCudaCompile.Compile(cuda_compiler, mex_file, src_fullfile, output_directory);
+                        mex_result = CoreCudaCompile.Compile(cuda_compiler, mex_file, src_fullfile, output_directory, compiler);
                     else
                         mex_result = CoreMexCompile.Compile(compiler, mex_file, src_fullfile, output_directory);
                     end

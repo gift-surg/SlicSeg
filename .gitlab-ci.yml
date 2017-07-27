@@ -33,7 +33,7 @@ gift-adelie:
     - MATLAB_SCRIPT=$(pwd)/matlab/CIBuildAndTest.m
     - LD_PRELOAD_DIR=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
     - PATH_WITH_CUDA=/usr/local/cuda-7.5/bin${PATH:+:${PATH}}
-    - env LD_PRELOAD=$LD_PRELOAD_DIR PATH=$PATH_WITH_CUDA $CI_SCRIPTS_DIR/test-linux.sh $MATLAB_EXE $MATLAB_SCRIPT
+    - env LD_PRELOAD=$LD_PRELOAD_DIR CORE_CXX=/usr/bin/g++-4.7 PATH=$PATH_WITH_CUDA $CI_SCRIPTS_DIR/test-linux.sh $MATLAB_EXE $MATLAB_SCRIPT
   tags:
     - gift-adelie
     - gift-linux
