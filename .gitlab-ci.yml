@@ -43,7 +43,7 @@ gift-skylight:
     - set OLD_PATH=%PATH%
     - echo ***** CUDA 7 *****
     - set CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5
-    - set %PATH=%CUDA_PATH%\bin;%OLD_PATH%;C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin
+    - set PATH=%CUDA_PATH%\bin;%OLD_PATH%;C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin
     - "call .\\ci\\test-win.bat"
     - echo ***** CUDA 8 *****
     - set CUDA_PATH=C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v8.0
