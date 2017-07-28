@@ -14,7 +14,7 @@ classdef CoreMexCompile < handle
         function mex_result = Compile(compiler, mex_file, src_fullfile, output_directory)
             mex_arguments = [{'-outdir', output_directory}, mex_file.CompilerOptions, src_fullfile, mex_file.OtherCompilerFiles];
             if ~isempty(compiler)
-                mex_arguments = [{['CXX=', '''', compiler, '''']}, mex_arguments];
+                mex_arguments = [{['GCC=', '''', compiler, '''']}, mex_arguments];
             end
             try
                 mex_result = mex(mex_arguments{:});
