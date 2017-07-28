@@ -1,57 +1,42 @@
 variables:
   CI_SCRIPTS_DIR: "./ci"
 
-gift-gala-cuda7:
+gift-gala:
   script:
-    - MATLAB_EXE=/Applications/MATLAB_R2016b.app/bin/matlab
     - MATLAB_SCRIPT=$(pwd)/matlab/CIBuildAndTest.m
+    - ECHO "***** CUDA 7 *****"
+    - MATLAB_EXE=/Applications/MATLAB_R2016b.app/bin/matlab
     - XCODE_EXE=/Applications/Xcode7.3.1.app/Contents/Developer
     - PATH_WITH_CUDA=/Developer/NVIDIA/CUDA-7.5/bin${PATH:+:${PATH}}
     - env DEVELOPER_DIR=$XCODE_EXE PATH=$PATH_WITH_CUDA $CI_SCRIPTS_DIR/test-mac.sh $MATLAB_EXE $MATLAB_SCRIPT
-  tags:
-    - gift-gala
-    - gift-mac
-    - matlab-r2016b
-    - cuda-7
-
-gift-gala-cuda8:
-  script:
+    - ECHO "***** CUDA 8 *****"
     - MATLAB_EXE=/Applications/MATLAB_R2017a.app/bin/matlab
-    - MATLAB_SCRIPT=$(pwd)/matlab/CIBuildAndTest.m
     - XCODE_EXE=/Applications/Xcode7.3.1.app/Contents/Developer
     - PATH_WITH_CUDA=/Developer/NVIDIA/CUDA-8.0/bin${PATH:+:${PATH}}
-    - env DEVELOPER_DIR=$XCODE_EXE PATH=$PATH_WITH_CUDA $CI_SCRIPTS_DIR/test-mac.sh $MATLAB_EXE $MATLAB_SCRIPT
   tags:
     - gift-gala
     - gift-mac
-    - matlab-r2017a
-    - cuda-8
+    - matlab
+    - cuda
 
-gift-adelie-cuda7:
+gift-adelie:
   script:
+    - MATLAB_SCRIPT=$(pwd)/matlab/CIBuildAndTest.m
+    - ECHO "***** CUDA 7 *****"
     - MATLAB_EXE=/usr/local/R2015b/bin/matlab
-    - MATLAB_SCRIPT=$(pwd)/matlab/CIBuildAndTest.m
-    - LD_PRELOAD_DIR=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
     - PATH_WITH_CUDA=/usr/local/cuda-7.5/bin${PATH:+:${PATH}}
-    - env LD_PRELOAD=$LD_PRELOAD_DIR CORE_CXX=/usr/bin/g++-4.7 PATH=$PATH_WITH_CUDA $CI_SCRIPTS_DIR/test-linux.sh $MATLAB_EXE $MATLAB_SCRIPT
-  tags:
-    - gift-adelie
-    - gift-linux
-    - matlab-r2015b
-    - cuda-7
-
-gift-adelie-cuda8:
-  script:
-    - MATLAB_EXE=/usr/local/R2017a/bin/matlab
-    - MATLAB_SCRIPT=$(pwd)/matlab/CIBuildAndTest.m
     - LD_PRELOAD_DIR=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
+    - env LD_PRELOAD=$LD_PRELOAD_DIR CORE_CXX=/usr/bin/g++-4.7 PATH=$PATH_WITH_CUDA $CI_SCRIPTS_DIR/test-linux.sh $MATLAB_EXE $MATLAB_SCRIPT
+    - ECHO "***** CUDA 8 *****"
+    - MATLAB_EXE=/usr/local/R2017a/bin/matlab
     - PATH_WITH_CUDA=/usr/local/cuda-8.0/bin${PATH:+:${PATH}}
+    - LD_PRELOAD_DIR=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
     - env LD_PRELOAD=$LD_PRELOAD_DIR CORE_CXX=/usr/bin/g++-4.9 PATH=$PATH_WITH_CUDA $CI_SCRIPTS_DIR/test-linux.sh $MATLAB_EXE $MATLAB_SCRIPT
   tags:
     - gift-adelie
     - gift-linux
-    - matlab-r2017a
-    - cuda-8
+    - matlab
+    - cuda
 
 gift-skylight:
   script:
