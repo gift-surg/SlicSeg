@@ -84,8 +84,40 @@ classdef CoreTextUtilities < handle
         function adjustedString = RemoveNonprintableCharacters(string)
             % Removes special characters from a string
             
-            adjustedString = string(uint8(string) >= 32);
-        end        
+            if isempty(string)
+                adjustedString = string;
+            else
+                adjustedString = string(uint8(string) >= 32);
+            end
+        end
+        
+        function adjustedString = RemoveNonprintableCharactersAndStrip(string)
+            % Removes special characters from a string
+            
+            if isempty(string)
+                adjustedString = string;
+            elseif ischar(string) 
+                adjustedString = strtrim(string(uint8(string) >= 32));
+            elseif isstruct(string)
+                adjustedString = struct;
+                for field = fieldnames(string)
+                    adjustedString.(field{1}) = CoreTextUtilities.RemoveNonprintableCharactersAndStrip(string.(field{1}));
+                end
+            else
+                adjustedString = string;
+            end
+        end
+        
+        function [first, last] = SplitAtLastDelimiter(string, delimiter)
+            index = find(string == delimiter, 1, 'last');
+            if isempty(index)
+                first = string;
+                last = '';
+            else
+                first = string(1:index - 1);
+                last = string(index + 1:end);
+            end
+        end
     end
 end
 

@@ -25,15 +25,15 @@ function CoreCompileMexFiles(mex_cache, output_directory, mex_files_to_compile, 
     cached_mex_file_info = mex_cache.MexInfoMap;
     framework_cache_was_missing = mex_cache.IsNewlyCreated;
     
-    [compiler, compiler_name] = GetCppCompiler();
-    if isempty(compiler_name)
-        compiler_name = MexSetup(retry_instructions, reporting);
+    compiler = GetNameOfCppCompiler;
+    if isempty(compiler)
+        compiler = MexSetup(retry_instructions, reporting);
     end
-    cuda_compiler = GetCudaCompiler();
+    cuda_compiler = GetCudaCompiler;
     
-    if ~isempty(compiler_name)
+    if ~isempty(compiler)
         CheckMexFiles(mex_files_to_compile, cached_mex_file_info, output_directory, framework_cache_was_missing, reporting);
-        Compile(mex_files_to_compile, mex_cache, cached_mex_file_info, output_directory, compiler_name, compiler, cuda_compiler, force_recompile, retry_instructions, reporting);
+        Compile(mex_files_to_compile, mex_cache, cached_mex_file_info, output_directory, compiler, cuda_compiler, force_recompile, retry_instructions, reporting);
     end
     
     mex_cache.UpdateCache(mex_files_to_compile, reporting);
@@ -52,14 +52,14 @@ function compiler = MexSetup(retry_instructions, reporting)
         disp(' ');        
         disp('***********************************************************************');
         mex -setup;
-        [cxx_compiler, name] = GetCppCompiler();
-        if isempty(name)
+        compiler = GetNameOfCppCompiler;
+        if isempty(compiler)
             reporting.ShowWarning('CoreCompileMexFiles:NoCompiler', ['I cannot compile mex files because no C++ compiler has been selected. Run mex -setup to choose your C++ compiler.' retry_instructions], []);
         end
     end
 end
 
-function Compile(mex_files_to_compile, framework_cache, cached_mex_file_info, output_directory, compiler_name, compiler, cuda_compiler, force_recompile, retry_instructions, reporting)
+function Compile(mex_files_to_compile, framework_cache, cached_mex_file_info, output_directory, compiler, cuda_compiler, force_recompile, retry_instructions, reporting)
     progress_message_showing_compile = false;
     for mex_file_s = mex_files_to_compile.values
         mex_file = mex_file_s{1};
@@ -104,7 +104,7 @@ function Compile(mex_files_to_compile, framework_cache, cached_mex_file_info, ou
             if cached_mex_file_info.isKey(mex_file.Name)
                 cached_mex_file = cached_mex_file_info(mex_file.Name);
                 version_unchanged_since_last_compilation_attempt = isequal(cached_mex_file.LastAttemptedCompiledVersion, mex_file.CurrentVersion);
-                compiler_unchanged_since_last_compilation_attempt = isequal(cached_mex_file.LastAttemptedCompiler, compiler_name);
+                compiler_unchanged_since_last_compilation_attempt = isequal(cached_mex_file.LastAttemptedCompiler, compiler);
                 if isempty(cached_mex_file.LastAttemptedCompileDatenum)
                     datenum_unchanged_since_last_compilation_attempt = true;
                 else
@@ -115,7 +115,7 @@ function Compile(mex_files_to_compile, framework_cache, cached_mex_file_info, ou
                     compiled_failed_last_time = false;
                 end
                 
-                if compiled_failed_last_time && version_unchanged_since_last_compilation_attempt && compiler_unchanged_since_last_compilation_attempt && datenum_unchanged_since_last_compilation_attempt
+                if compiled_failed_last_time && version_unchanged_since_last_compilation_attempt && compiler_unchanged_since_last_compilation_attempt && datenum_unchanged_since_last_compilation_attempt;
                     try_compilation_again = false;
                 else
                     try_compilation_again = true;
@@ -144,18 +144,18 @@ function Compile(mex_files_to_compile, framework_cache, cached_mex_file_info, ou
                     end
                     
                     if use_cuda
-                        mex_result = CoreCudaCompile.Compile(cuda_compiler, mex_file, src_fullfile, output_directory, compiler);
+                        mex_result = CoreCudaCompile.Compile(cuda_compiler, mex_file, src_fullfile, output_directory);
                     else
                         mex_result = CoreMexCompile.Compile(compiler, mex_file, src_fullfile, output_directory);
                     end
                     mex_file.LastAttemptedCompiledVersion = mex_file.CurrentVersion;
-                    mex_file.LastAttemptedCompiler = compiler_name;
+                    mex_file.LastAttemptedCompiler = compiler;
                     mex_file.LastAttemptedCompileDatenum = last_modified_datenum;
                     if (mex_result == 0)
                         mex_file.LastCompileFailed = false;
                         mex_file.LastSuccessfulCompiledVersion = mex_file.CurrentVersion;
                         mex_file.LastSuccessfulCompileDatenum = last_modified_datenum;
-                        mex_file.LastSuccessfulCompiler = compiler_name;
+                        mex_file.LastSuccessfulCompiler = compiler;
                         reporting.ShowMessage('CoreCompileMexFiles:MexCompilationSucceeded', [' - ' src_filename ' compiled successfully.']);
                     else
                         mex_file.LastCompileFailed = true;
@@ -187,7 +187,11 @@ function CheckMexFiles(mex_files_to_compile, cached_mex_file_info, output_direct
             cached_mex_file = cached_mex_file_info(mex_file.Name);
             
             file_info = dir(fullfile(mex_file.Path, [mex_file.Name '.' mex_file.Extension]));
-            current_file_timestamp = file_info.date;
+            if numel(file_info) > 0
+                current_file_timestamp = file_info.date;
+            else
+                current_file_timestamp = [];
+            end
             
             % Copy across the cached values
             mex_file.LastSuccessfulCompiledVersion = cached_mex_file.LastSuccessfulCompiledVersion;
@@ -249,28 +253,19 @@ function CheckMexFiles(mex_files_to_compile, cached_mex_file_info, output_direct
     end
 end
 
-function [cxx_compiler, name] = GetCppCompiler()
-    % Returns a path to the C++ compiler executable, if specified in the environment
-    % variable CORE_XCC; otherwise returns the name of the selected
-    % compiler with cxx_compiler set to empty.
-    
-    cxx_compiler = getenv('CORE_CXX');
-    if ~isempty(cxx_compiler) && exist(cxx_compiler, 'file')
-       name = cxx_compiler;
+function name = GetNameOfCppCompiler
+    cc = mex.getCompilerConfigurations('C++', 'Selected');
+    if isempty(cc)
+        name = [];
     else
-        cxx_compiler = [];
-        cc = mex.getCompilerConfigurations('C++', 'Selected');
-        if isempty(cc)
-            name = [];
-        else
-            name = cc(1).Name;
-        end
+        name = cc(1).Name;
     end
 end
 
-function cuda_compiler = GetCudaCompiler()
+function cuda_compiler = GetCudaCompiler
     if ispc
         [status, cuda_compiler] = system('where nvcc');
+        cuda_compiler = split(cuda_compiler, char(13));
 
         if status ~= 0
             cuda_compiler = TryToFindCudaCompilerPc(fullfile(getenv('ProgramFiles'), 'NVIDIA GPU Computing Toolkit', 'CUDA'));
@@ -281,12 +276,11 @@ function cuda_compiler = GetCudaCompiler()
                 cuda_compiler = TryToFindCudaCompilerPc(fullfile(getenv('ProgramFiles(x86)'), 'NVIDIA GPU Computing Toolkit', 'CUDA'));
             end
         end
-        cuda_compiler = CoreTextUtilities.RemoveNonprintableCharacters(cuda_compiler);
     else
         [status, cuda_compiler] = system('which nvcc');
 
         if status == 0
-            cuda_compiler = CoreTextUtilities.RemoveNonprintableCharacters(cuda_compiler);
+            cuda_compiler = CoreTextUtilities.RemoveNonprintableCharactersAndStrip(cuda_compiler);
         else
             if 2 == exist('/usr/local/cuda/bin/nvcc', 'file')
                 cuda_compiler = '/usr/local/cuda/bin/nvcc';
@@ -304,7 +298,7 @@ function compiler = TryToFindCudaCompilerPc(base_dir)
     for dir_name = directories
         bin_dir = fullfile(base_dir, dir_name{1}, 'bin');
         if isdir(bin_dir)
-            compiler = bin_dir;
+            compiler = fullfile(bin_dir, 'NVCC.EXE');
             return;
         end
     end
