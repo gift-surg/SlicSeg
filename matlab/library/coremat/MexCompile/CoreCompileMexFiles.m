@@ -265,7 +265,7 @@ end
 function cuda_compiler = GetCudaCompiler
     if ispc
         [status, cuda_compiler] = system('where nvcc');
-        cuda_compiler = split(cuda_compiler, char(13));
+        cuda_compiler = strtok(cuda_compiler, char(13));
 
         if status ~= 0
             cuda_compiler = TryToFindCudaCompilerPc(fullfile(getenv('ProgramFiles'), 'NVIDIA GPU Computing Toolkit', 'CUDA'));
