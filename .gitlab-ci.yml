@@ -13,6 +13,7 @@ gift-gala:
     - MATLAB_EXE=/Applications/MATLAB_R2017a.app/bin/matlab
     - XCODE_EXE=/Applications/Xcode7.3.1.app/Contents/Developer
     - PATH_WITH_CUDA=/Developer/NVIDIA/CUDA-8.0/bin${PATH:+:${PATH}}
+    - env DEVELOPER_DIR=$XCODE_EXE PATH=$PATH_WITH_CUDA $CI_SCRIPTS_DIR/test-mac.sh $MATLAB_EXE $MATLAB_SCRIPT
   tags:
     - gift-gala
     - gift-mac
