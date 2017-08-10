@@ -22,15 +22,16 @@ gift-gala:
 
 gift-adelie:
   script:
+    - PATH_NO_CUDA=`echo $PATH | sed -e 's|:/usr/local/cuda/bin||'`
     - MATLAB_SCRIPT=$(pwd)/matlab/CIBuildAndTest.m
     - echo "***** CUDA 7 *****"
     - MATLAB_EXE=/usr/local/R2015b/bin/matlab
-    - PATH_WITH_CUDA=/usr/local/cuda-7.5/bin${PATH:+:${PATH}}
+    - PATH_WITH_CUDA=/usr/local/cuda-7.5/bin${PATH_NO_CUDA:+:${PATH_NO_CUDA}}
     - LD_PRELOAD_DIR=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
     - env LD_PRELOAD=$LD_PRELOAD_DIR CORE_CXX=/usr/bin/g++-4.7 PATH=$PATH_WITH_CUDA $CI_SCRIPTS_DIR/test-linux.sh $MATLAB_EXE $MATLAB_SCRIPT
     - echo "***** CUDA 8 *****"
     - MATLAB_EXE=/usr/local/R2017a/bin/matlab
-    - PATH_WITH_CUDA=/usr/local/cuda-8.0/bin${PATH:+:${PATH}}
+    - PATH_WITH_CUDA=/usr/local/cuda-8.0/bin${PATH_NO_CUDA:+:${PATH_NO_CUDA}}
     - LD_PRELOAD_DIR=/usr/lib/x86_64-linux-gnu/libstdc++.so.6
     - env LD_PRELOAD=$LD_PRELOAD_DIR CORE_CXX=/usr/bin/g++-4.9 PATH=$PATH_WITH_CUDA $CI_SCRIPTS_DIR/test-linux.sh $MATLAB_EXE $MATLAB_SCRIPT
   tags:

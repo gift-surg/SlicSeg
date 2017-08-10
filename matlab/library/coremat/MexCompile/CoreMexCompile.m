@@ -1,4 +1,4 @@
-classdef CoreMexCompile < handle
+ classdef CoreMexCompile < handle
     % CoreMexCompile. Class for compiling mex files
     %
     %
@@ -13,6 +13,9 @@ classdef CoreMexCompile < handle
     methods (Static)
         function mex_result = Compile(compiler, mex_file, src_fullfile, output_directory)
             mex_arguments = [{'-outdir', output_directory}, mex_file.CompilerOptions, src_fullfile, mex_file.OtherCompilerFiles];
+            if ~isempty(compiler)
+                mex_arguments = [{['GCC=', '''', compiler, '''']}, mex_arguments];
+            end
             try
                 mex_result = mex(mex_arguments{:});
             catch ex
