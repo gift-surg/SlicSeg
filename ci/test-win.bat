@@ -9,6 +9,7 @@ if exist ci-output.log (
 ) else (
     echo Log file not found
 )
+echo ...end of log file
 
 
 if not "!LEVEL!" == "0" (
