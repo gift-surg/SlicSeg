@@ -74,6 +74,8 @@ glbHandles = handles;
 % Listen for slice number change callbacks
 addlistener(imageSegUIController, 'currentViewImageIndex', 'PostSet', @UpdateSliceNumber);
 addlistener(imageSegUIController, 'guiState', 'PostSet', @UpdateGuiState);
+addlistener(imageSegUIController, 'contrastMin', 'PostSet', @UpdateGuiContrastEdit);
+addlistener(imageSegUIController, 'contrastMax', 'PostSet', @UpdateGuiContrastEdit);
 UpdateGui(ImageSegUIState.NoImage);
 
 
@@ -100,39 +102,28 @@ imageSegUIController.selectAndLoad();
 
 % Update the slice number and slider
 maxSliceNumber = imageSegUIController.getMaxSliceNumber;
-set(handles.text_totalslice,'String', ['Total number of slices: ' num2str(maxSliceNumber)]);
 set(handles.slider_imageIndex,'Value', max(1, min(maxSliceNumber, ceil(maxSliceNumber/2))));
 set(handles.slider_imageIndex,'Min', 1);
 set(handles.slider_imageIndex,'Max', maxSliceNumber);
 set(handles.slider_imageIndex,'SliderStep',[1/max(1, maxSliceNumber-1) 1]);
 
-
-% --- Executes on button press in pushbutton_loadImage.
-function pushbutton_save_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_loadImage (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Save the segmented the images
-global imageSegUIController
-imageSegUIController.save();
-
-% --- Executes on button press in pushbutton_selectForeground.
-function pushbutton_selectForeground_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_solectForground (see GCBO)
+% --- Executes on button press in pushbutton_reload.
+function pushbutton_reload_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_reload (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global imageSegUIController
-imageSegUIController.leftMouseSelectsForeground = true;
+imageSegUIController.reset();
 
-
-% --- Executes on button press in pushbutton_selectBackground.
-function pushbutton_selectBackground_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_selectBackGound (see GCBO)
+% --- Executes on button press in pushbutton_reset_contrast.
+function pushbutton_reset_contrast_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_reload (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global imageSegUIController
-imageSegUIController.leftMouseSelectsForeground = false;
+contrastMin = str2num(get(handles.edit_contrastMin, 'String'));
+contrastMax = str2num(get(handles.edit_contrastMax, 'String'));
+imageSegUIController.resetContrast(contrastMin, contrastMax);
 
 
 % --- Executes on button press in pushbutton_segment.
@@ -154,15 +145,24 @@ minSlice=str2double(get(handles.edit_min,'String'));
 maxSlice=str2double(get(handles.edit_max,'String'));
 imageSegUIController.propagate(minSlice, maxSlice);
 
-
-% --- Executes on button press in pushbutton_reload.
-function pushbutton_reload_Callback(hObject, eventdata, handles)
-% hObject    handle to pushbutton_reload (see GCBO)
+% --- Executes on button press in pushbutton_propagate.
+function pushbutton_refine_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_Propagate (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 global imageSegUIController
-imageSegUIController.reset();
+imageSegUIController.refine();
 
+
+% --- Executes on button press in pushbutton_loadImage.
+function pushbutton_save_Callback(hObject, eventdata, handles)
+% hObject    handle to pushbutton_loadImage (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Save the segmented the images
+global imageSegUIController
+imageSegUIController.save();
 
 % --- Executes on slider movement.
 function slider_imageIndex_Callback(hObject, eventdata, handles)
@@ -234,53 +234,66 @@ end
 
 function UpdateSliceNumber(eventSrc, eventData)
     % Callback for when the controller's slice number has changed
+    global imageSegUIController;
     global glbHandles;
     currentViewImageIndex = eventData.AffectedObject.currentViewImageIndex;
+    maxSliceNumber = imageSegUIController.getMaxSliceNumber;
     set(glbHandles.slider_imageIndex, 'Value', currentViewImageIndex);
-    set(glbHandles.text_currentslice, 'String', ['Current slice number: ' num2str(currentViewImageIndex)]);
-
+    set(glbHandles.text_currentslice, 'String', [num2str(currentViewImageIndex) '/' num2str(maxSliceNumber)]);
 
 function UpdateGuiState(eventSrc, eventData)
     % Callback for when the controller has entered a different state
     UpdateGui(eventData.AffectedObject.guiState);
-    
+
+function UpdateGuiContrastEdit(eventSrc, eventData)
+    global glbHandles,
+    set(glbHandles.edit_contrastMin, 'String', num2str(eventData.AffectedObject.contrastMin));
+    set(glbHandles.edit_contrastMax, 'String', num2str(eventData.AffectedObject.contrastMax));
+
 function UpdateGui(newState)
     global glbHandles;
     loaded = 'off';
-    fully = 'off';
+    scribbleProvided = 'off';
+    startSliceSegmented = 'off';
+    fullySegmented = 'off';
     if ~isempty(newState) && isa(newState, 'ImageSegUIState')
         switch newState
             case ImageSegUIState.NoImage
                 loaded = 'off';
-                segmented = 'off';
-                fully = 'off';
+                scribbleProvided = 'off';
+                startSliceSegmented = 'off';
+                fullySegmented = 'off';
             case ImageSegUIState.ImageLoaded
                 loaded = 'on';
-                segmented = 'off';
-                fully = 'off';
+                scribbleProvided = 'off';
+                startSliceSegmented = 'off';
+                fullySegmented = 'off';
+            case ImageSegUIState.ScribblesProvided
+                loaded = 'on';
+                scribbleProvided = 'on';
+                startSliceSegmented = 'off';
+                fullySegmented = 'off';
             case ImageSegUIState.SliceSegmented
                 loaded = 'on';
-                segmented = 'on';
-                fully = 'off';
+                scribbleProvided = 'on';
+                startSliceSegmented = 'on';
+                fullySegmented = 'off';
             case ImageSegUIState.FullySegmented
                 loaded = 'on';
-                segmented = 'on';
-                fully = 'on';
+                scribbleProvided = 'on';
+                startSliceSegmented = 'on';
+                fullySegmented = 'on';
         end
     end
-    
-    set(glbHandles.pushbutton_selectBackgound, 'Enable', loaded);
-    set(glbHandles.pushbutton_selectForground, 'Enable', loaded);
-    set(glbHandles.pushbutton_segment, 'Enable', loaded);
+   
     set(glbHandles.slider_imageIndex, 'Enable', loaded);
-    set(glbHandles.edit_max, 'Enable', loaded);
-    set(glbHandles.edit_min, 'Enable', loaded);
-    set(glbHandles.text_currentslice, 'Enable', loaded);
-    set(glbHandles.text13, 'Enable', loaded);
-    set(glbHandles.text14, 'Enable', loaded);
-    set(glbHandles.text_totalslice, 'Enable', loaded);
-    set(glbHandles.text_currentslice, 'Enable', loaded);
     set(glbHandles.pushbutton_reload, 'Enable', loaded);
-    set(glbHandles.pushbutton_Propagate, 'Enable', segmented);
-    set(glbHandles.pushbutton_save, 'Enable', fully);
+    set(glbHandles.edit_contrastMax, 'Enable', loaded);
+    set(glbHandles.edit_contrastMin, 'Enable', loaded);
+    set(glbHandles.pushbutton_reset_contrast, 'Enable', loaded);    
+    set(glbHandles.pushbutton_segment, 'Enable', scribbleProvided);
+    set(glbHandles.edit_max, 'Enable', startSliceSegmented);
+    set(glbHandles.edit_min, 'Enable', startSliceSegmented);
+    set(glbHandles.pushbutton_Propagate, 'Enable', startSliceSegmented);
+    set(glbHandles.pushbutton_save, 'Enable', fullySegmented);
     

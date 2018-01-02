@@ -1,6 +1,5 @@
 classdef ImageSegUIState
     enumeration
-        NoImage, ImageLoaded, SliceSegmented, FullySegmented
+        NoImage, ImageLoaded, ScribblesProvided, SliceSegmented, FullySegmented
     end
 end
-

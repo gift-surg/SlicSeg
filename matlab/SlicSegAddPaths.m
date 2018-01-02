@@ -33,6 +33,8 @@ function SlicSegAddPaths(varargin)
         path_folders{end + 1} = '';
         path_folders{end + 1} = fullfile('gui');
         path_folders{end + 1} = fullfile('test');
+        path_folders{end + 1} = fullfile('imageIO');
+        path_folders{end + 1} = fullfile('imageIO', 'NIfTI_20140122');
         path_folders{end + 1} = fullfile('library', 'coremat');
         path_folders{end + 1} = fullfile('library', 'dicomat');
         path_folders{end + 1} = fullfile('library', 'dwt');

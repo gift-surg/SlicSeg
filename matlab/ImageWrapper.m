@@ -79,6 +79,10 @@ classdef ImageWrapper < handle
                     obj.rawImage(:, :, sliceIndex) = newSlice;
             end
         end
+        
+        function setPixelValue(obj, i,j,k, value)
+            obj.rawImage(i,j,k) = value;
+        end
     end
     
 end
