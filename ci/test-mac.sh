@@ -1,9 +1,23 @@
 #!/bin/bash
-/Applications/MATLAB_R2015b.app/bin/matlab -nodisplay -nosplash -nodesktop -r "try, run('$(pwd)/matlab/CIBuildAndTest.m'), catch ex, disp(['Exception during CIBuildAndTest.m: ' ex.message]), exit(1), end, exit(0); "
+
+if [[ -z "$1" ]] ; then
+    echo "No MATLAB executable specified"
+    exit 1
+fi
+
+if [[ -z "$2" ]] ; then
+    echo "No MATLAB script specified"
+    exit 1
+fi
+
+MATLAB_EXE=$1
+MATLAB_SCRIPT=$2
+
+$MATLAB_EXE -nodisplay -nosplash -nodesktop -r "try, run('$MATLAB_SCRIPT'), catch ex, disp(['Exception during CIBuildAndTest.m: ' ex.message]), exit(1), end, exit(0); "
 if [ $? -eq 0 ]; then
-	echo "Success running CIBuildAndTest.m"
+	echo "$MATLAB_EXE: Success running $MATLAB_SCRIPT"
 	exit 0;
 else
-	echo "Failure running CIBuildAndTest.m"
+	echo "$MATLAB_EXE: Failure running $MATLAB_SCRIPT"
 	exit 1;
 fi

@@ -11,8 +11,12 @@ classdef CoreCudaCompile < handle
     %    
     
     methods (Static)
-        function mex_result = Compile(compiler, mex_file, src_fullfile, output_directory)
-            compile_arguments = ['"' compiler '" -ptx --output-directory ' output_directory ' ' src_fullfile, ' ' mex_file.OtherCompilerFiles];
+        function mex_result = Compile(compiler, cpp_compiler, mex_file, src_fullfile, output_directory)
+            if isempty(cpp_compiler)
+                compile_arguments = ['"' compiler '" -ptx --output-directory ' output_directory ' ' src_fullfile, ' ' mex_file.OtherCompilerFiles];
+            else
+                compile_arguments = ['"' compiler '" -ptx --compiler-bindir=' cpp_compiler ' --output-directory ' output_directory ' ' src_fullfile, ' ' mex_file.OtherCompilerFiles];
+            end
             mex_result = system(compile_arguments);
         end
     end
