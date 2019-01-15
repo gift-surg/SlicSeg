@@ -107,6 +107,7 @@ How to use
  
 How to use the user interface
 ----------------------------
+  * A demo video is available on YouTube: https://www.youtube.com/watch?v=CtxCHdRJpO8&feature=youtu.be
   * Run `slicseg` to launch the user interface.
   * The mex and cuda files will automatically compile if they have not already been compiled. This will fail if you have not installed and correctly set up your mex and cuda compilers to work with Matlab.
   * Click `Load` to load Dicom or a series of png image from a directory you specify
